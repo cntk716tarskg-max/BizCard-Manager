@@ -76,7 +76,9 @@ const FilterService = {
             b.kana || b.name || '', 'ja'
           );
         case 'company_asc':
-          return (a.company || '').localeCompare(b.company || '', 'ja');
+          return (a.companyKana || a.company || '').localeCompare(
+            b.companyKana || b.company || '', 'ja'
+          );
         default:
           return 0;
       }
@@ -125,12 +127,23 @@ const FilterService = {
       );
     });
 
-    // グループ自体を会社名の五十音順にソート（「（会社名なし）」は末尾）
+    // グループ自体をふりがな優先で五十音順にソート（「（会社名なし）」は末尾）
+    // sortKey にはふりがなを使い、表示名は元の会社名をそのまま使う
+    const companyKanaMap = new Map();
+    cards.forEach(card => {
+      const key = card.company?.trim() || '（会社名なし）';
+      if (!companyKanaMap.has(key) && card.companyKana) {
+        companyKanaMap.set(key, card.companyKana.trim());
+      }
+    });
+
     return [...map.entries()]
       .sort(([a], [b]) => {
         if (a === '（会社名なし）') return 1;
         if (b === '（会社名なし）') return -1;
-        return a.localeCompare(b, 'ja');
+        const sortA = companyKanaMap.get(a) || a;
+        const sortB = companyKanaMap.get(b) || b;
+        return sortA.localeCompare(sortB, 'ja');
       })
       .map(([company, cards]) => ({ company, cards }));
   },

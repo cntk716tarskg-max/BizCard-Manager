@@ -253,9 +253,10 @@ const FormModal = {
    */
   _fillForm(card) {
     // テキストフィールド
-    const fields = ['name', 'kana', 'company', 'department', 'position', 'zipCode', 'address', 'notes'];
+    const fields = ['name', 'kana', 'company', 'companyKana', 'department', 'position', 'zipCode', 'address', 'notes'];
     const idMap = {
       name: 'field-name', kana: 'field-kana', company: 'field-company',
+      companyKana: 'field-company-kana',
       department: 'field-department', position: 'field-position',
       zipCode: 'field-zip', address: 'field-address', notes: 'field-notes',
     };
@@ -456,10 +457,11 @@ const FormModal = {
     });
 
     return {
-      name:       val('field-name'),
-      kana:       val('field-kana'),
-      company:    val('field-company'),
-      department: val('field-department'),
+      name:        val('field-name'),
+      kana:        val('field-kana'),
+      company:     val('field-company'),
+      companyKana: val('field-company-kana'),
+      department:  val('field-department'),
       position:   val('field-position'),
       zipCode:    val('field-zip'),
       address:    val('field-address'),

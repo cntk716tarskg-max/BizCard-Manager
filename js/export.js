@@ -22,7 +22,7 @@ const ExportService = {
     }
 
     const header = [
-      '氏名', 'ふりがな', '会社名', '部署', '役職',
+      '氏名', 'ふりがな', '会社名', '会社名ふりがな', '部署', '役職',
       '郵便番号', '住所',
       '電話番号1種別', '電話番号1', '電話番号2種別', '電話番号2',
       'メール1', 'メール2',
@@ -39,10 +39,11 @@ const ExportService = {
       };
 
       return [
-        c.name       || '',
-        c.kana       || '',
-        c.company    || '',
-        c.department || '',
+        c.name        || '',
+        c.kana        || '',
+        c.company     || '',
+        c.companyKana || '',
+        c.department  || '',
         c.position   || '',
         c.zipCode    || '',
         c.address    || '',

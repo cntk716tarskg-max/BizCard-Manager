@@ -131,7 +131,7 @@ const DetailModal = {
     html += `<div class="detail-name-block">
       <div class="detail-name">${esc(card.name)}</div>
       ${card.kana ? `<div class="detail-kana">${esc(card.kana)}</div>` : ''}
-      ${card.company ? `<div class="detail-company">${esc(card.company)}</div>` : ''}`;
+      ${card.company ? `<div class="detail-company">${esc(card.company)}${card.companyKana ? `<span class="detail-company-kana">${esc(card.companyKana)}</span>` : ''}</div>` : ''}`;
     const deptPos = [card.department, card.position].filter(Boolean).join('　');
     if (deptPos) html += `<div class="detail-dept-pos">${esc(deptPos)}</div>`;
     html += `</div>`;

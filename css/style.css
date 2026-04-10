@@ -1383,6 +1383,14 @@ a:hover { text-decoration: underline; }
   margin-top: 8px;
 }
 
+.detail-company-kana {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
 .detail-dept-pos {
   font-size: 0.875rem;
   color: var(--text-muted);
