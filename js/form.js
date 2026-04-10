@@ -261,12 +261,12 @@ const FormModal = {
    */
   _fillForm(card) {
     // テキストフィールド
-    const fields = ['name', 'kana', 'company', 'companyKana', 'department', 'position', 'zipCode', 'address', 'notes'];
+    const fields = ['name', 'kana', 'company', 'companyKana', 'department', 'position', 'notes'];
     const idMap = {
       name: 'field-name', kana: 'field-kana', company: 'field-company',
       companyKana: 'field-company-kana',
       department: 'field-department', position: 'field-position',
-      zipCode: 'field-zip', address: 'field-address', notes: 'field-notes',
+      notes: 'field-notes',
     };
     fields.forEach(f => {
       const el = document.getElementById(idMap[f]);
@@ -291,6 +291,15 @@ const FormModal = {
     if (emails.length > 0) {
       emails.forEach(e => this._addEmailRow(e));
     }
+
+    // 住所（旧データ形式の自動変換: zipCode/address → addresses 配列）
+    const addressesContainer = document.getElementById('addresses-container');
+    addressesContainer.innerHTML = '';
+    let addresses = card ? (card.addresses || []) : [];
+    if (addresses.length === 0 && card && (card.zipCode || card.address)) {
+      addresses = [{ label: '', zipCode: card.zipCode || '', address: card.address || '' }];
+    }
+    addresses.forEach(a => this._addAddressRow(a));
 
     // 写真プレビュー（PhotoUploaderで初期化）
     PhotoUploader.init(card ? (card.photos || []) : []);
@@ -385,6 +394,34 @@ const FormModal = {
   },
 
   /**
+   * 住所行を追加する
+   * @param {{ label?: string, zipCode?: string, address?: string }} addr
+   */
+  _addAddressRow(addr = {}) {
+    const container = document.getElementById('addresses-container');
+    const div = document.createElement('div');
+    div.className = 'address-row';
+    div.innerHTML = `
+      <div class="address-row-header">
+        <input type="text" class="address-label-input"
+               placeholder="本社・支社・自宅 など（省略可）"
+               value="${UI._esc(addr.label || '')}">
+        <button type="button" class="btn-remove-row" title="削除">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <input type="text" class="address-zip-input" placeholder="郵便番号（例: 123-4567）"
+             value="${UI._esc(addr.zipCode || '')}">
+      <textarea class="address-text-input" rows="2"
+                placeholder="東京都千代田区〇〇1-2-3">${UI._esc(addr.address || '')}</textarea>`;
+    div.querySelector('.btn-remove-row').addEventListener('click', () => div.remove());
+    container.appendChild(div);
+  },
+
+  /**
    * プリセットタグボタンを描画する
    */
   _renderPresetTags() {
@@ -464,16 +501,24 @@ const FormModal = {
       if (v) emails.push(v);
     });
 
+    // 住所（複数対応）
+    const addresses = [];
+    document.querySelectorAll('#addresses-container .address-row').forEach(row => {
+      const label   = row.querySelector('.address-label-input')?.value.trim() || '';
+      const zipCode = row.querySelector('.address-zip-input')?.value.trim() || '';
+      const address = row.querySelector('.address-text-input')?.value.trim() || '';
+      if (zipCode || address) addresses.push({ label, zipCode, address });
+    });
+
     return {
       name:        val('field-name'),
       kana:        val('field-kana'),
       company:     val('field-company'),
       companyKana: val('field-company-kana'),
       department:  val('field-department'),
-      position:   val('field-position'),
-      zipCode:    val('field-zip'),
-      address:    val('field-address'),
-      notes:      val('field-notes'),
+      position:    val('field-position'),
+      addresses,
+      notes:       val('field-notes'),
       phones,
       emails,
       tags:       [...this._selectedTags],
@@ -535,6 +580,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 電話番号追加
   document.getElementById('btn-add-phone').addEventListener('click', () => FormModal._addPhoneRow());
+
+  // 住所追加
+  document.getElementById('btn-add-address').addEventListener('click', () => FormModal._addAddressRow());
 
   // メール追加
   document.getElementById('btn-add-email').addEventListener('click', () => FormModal._addEmailRow());

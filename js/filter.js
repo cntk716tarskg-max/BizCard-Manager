@@ -43,14 +43,20 @@ const FilterService = {
    * 対象：氏名・ふりがな・会社名・部署・役職・メール・備考・タグ
    */
   _matchSearch(card, query) {
+    // 住所（複数対応・旧データ形式の後方互換）
+    const addressTexts = card.addresses && card.addresses.length > 0
+      ? card.addresses.flatMap(a => [a.label, a.zipCode, a.address])
+      : [card.address, card.zipCode];
+
     const targets = [
       card.name,
       card.kana,
       card.company,
+      card.companyKana,
       card.department,
       card.position,
-      card.address,
       card.notes,
+      ...addressTexts,
       ...(card.emails || []),
       ...(card.phones || []).map(p => p.number),
       ...(card.tags || []),

@@ -261,16 +261,14 @@
           <!-- 住所 -->
           <div class="form-section">
             <div class="form-section-title">住所</div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="field-zip">郵便番号</label>
-                <input type="text" id="field-zip" name="zipCode" placeholder="123-4567" autocomplete="off">
-              </div>
-              <div class="form-group full">
-                <label for="field-address">住所</label>
-                <textarea id="field-address" name="address" rows="2" placeholder="東京都千代田区〇〇1-2-3"></textarea>
-              </div>
-            </div>
+            <div id="addresses-container"></div>
+            <button type="button" id="btn-add-address" class="btn-add-field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              住所を追加
+            </button>
           </div>
           <!-- タグ -->
           <div class="form-section">

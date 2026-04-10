@@ -23,7 +23,8 @@ const ExportService = {
 
     const header = [
       '氏名', 'ふりがな', '会社名', '会社名ふりがな', '部署', '役職',
-      '郵便番号', '住所',
+      '住所1タイトル', '住所1郵便番号', '住所1',
+      '住所2タイトル', '住所2郵便番号', '住所2',
       '電話番号1種別', '電話番号1', '電話番号2種別', '電話番号2',
       'メール1', 'メール2',
       'タグ', '備考', '登録日', '更新日',
@@ -44,9 +45,17 @@ const ExportService = {
         c.company     || '',
         c.companyKana || '',
         c.department  || '',
-        c.position   || '',
-        c.zipCode    || '',
-        c.address    || '',
+        c.position    || '',
+        // 住所（複数対応・旧データ形式の後方互換）
+        ...(() => {
+          const addrs = c.addresses && c.addresses.length > 0
+            ? c.addresses
+            : (c.address || c.zipCode) ? [{ label: '', zipCode: c.zipCode || '', address: c.address || '' }] : [];
+          const a1 = addrs[0] || {};
+          const a2 = addrs[1] || {};
+          return [a1.label || '', a1.zipCode || '', a1.address || '',
+                  a2.label || '', a2.zipCode || '', a2.address || ''];
+        })(),
         phones[0]?.type   || '',
         phones[0]?.number || '',
         phones[1]?.type   || '',

@@ -175,24 +175,34 @@ const DetailModal = {
       </div>`;
     }
 
-    // 住所
-    if (card.address || card.zipCode) {
-      const fullAddress = [card.zipCode ? `〒${card.zipCode}` : '', card.address]
-        .filter(Boolean).join('　');
-      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.address || '')}`;
+    // 住所（複数対応・旧データ形式の後方互換）
+    const addresses = card.addresses && card.addresses.length > 0
+      ? card.addresses
+      : (card.address || card.zipCode)
+        ? [{ label: '', zipCode: card.zipCode || '', address: card.address || '' }]
+        : [];
+    if (addresses.length > 0) {
       html += `<div class="detail-section">
         <div class="detail-section-label">住所</div>
-        <div class="detail-address-row">
-          <div class="detail-value">${esc(fullAddress)}</div>
-          ${card.address ? `
-            <button class="btn-map" onclick="window.open('${mapUrl}', '_blank')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              地図を開く
-            </button>` : ''}
-        </div>
+        ${addresses.map(addr => {
+          const fullAddress = [addr.zipCode ? `〒${addr.zipCode}` : '', addr.address]
+            .filter(Boolean).join('　');
+          const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr.address || '')}`;
+          return `<div class="detail-address-item">
+            ${addr.label ? `<span class="address-label-badge">${esc(addr.label)}</span>` : ''}
+            <div class="detail-address-row">
+              <div class="detail-value">${esc(fullAddress)}</div>
+              ${addr.address ? `
+                <button class="btn-map" onclick="window.open('${mapUrl}', '_blank')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  地図を開く
+                </button>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
       </div>`;
     }
 
