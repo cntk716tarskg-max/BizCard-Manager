@@ -24,25 +24,13 @@ const State = {
 const CardService = {
   /**
    * 名刺一覧を読み込む。
-   * ・有効なキャッシュがある → Firestore を読まずキャッシュから即時表示
-   * ・キャッシュ期限切れ / 初回 → Firestore から全件取得してキャッシュを更新
+   * 常に Firestore から全件取得する（デバイス間で常に最新データを表示するため）。
+   * 書き込み操作後は State.cards をメモリ上で更新するため再読み込みは不要。
    */
   async load() {
-    const uid = AuthService.getUid();
-
-    // --- キャッシュヒット: Firestore 読み取りをスキップ ---
-    const cached = CacheService.get(uid);
-    if (cached) {
-      State.cards = cached;
-      this.applyFilter();
-      return;
-    }
-
-    // --- キャッシュミス: Firestore から取得 ---
     try {
       const data = await StorageService.getAll();
       State.cards = Array.isArray(data) ? data : [];
-      CacheService.set(uid, State.cards);
     } catch (e) {
       console.error('データ読み込みエラー:', e);
       State.cards = [];

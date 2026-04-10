@@ -12,19 +12,34 @@ const DetailModal = {
   _photoIdx: 0,
 
   /**
-   * 詳細モーダルを開く
+   * 詳細モーダルを開く。
+   * まず State.cards の値で即時表示し、
+   * バックグラウンドで Firestore から最新データを取得して再描画する。
    * @param {string} id
    */
-  open(id) {
-    const card = CardService.getById(id);
-    if (!card) return;
+  async open(id) {
+    const cached = CardService.getById(id);
+    if (!cached) return;
 
     this._currentId = id;
     this._photoIdx = 0;
-    this._render(card);
+    this._render(cached);
 
     document.getElementById('detail-modal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+
+    // Firestore から最新データを取得して再描画（別デバイスでの更新を反映）
+    try {
+      const fresh = await StorageService.getCard(id);
+      if (fresh && this._currentId === id) {
+        // State.cards も更新しておく（編集ボタン押下時に最新データを使うため）
+        const idx = State.cards.findIndex(c => c.id === id);
+        if (idx !== -1) State.cards[idx] = fresh;
+        this._render(fresh);
+      }
+    } catch (e) {
+      console.warn('詳細データの更新取得に失敗:', e);
+    }
   },
 
   /**

@@ -50,6 +50,17 @@ const StorageService = {
   },
 
   /**
+   * 1件取得（詳細モーダルで最新データを取得するために使用）
+   * @param {string} id
+   * @returns {Promise<BusinessCard|null>}
+   */
+  async getCard(id) {
+    const doc = await this._col().doc(id).get();
+    if (!doc.exists) return null;
+    return { id: doc.id, ...doc.data() };
+  },
+
+  /**
    * 1件保存（新規・更新 共通の upsert）
    * @param {BusinessCard} card
    */

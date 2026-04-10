@@ -245,6 +245,14 @@ const FormModal = {
     this._editingId = null;
     this._selectedTags = [];
     PhotoUploader.init([]); // 写真リストをリセット
+
+    // 保存ボタンのローディング状態を必ずリセットする
+    const saveBtn = document.getElementById('form-save-btn');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = saveBtn.dataset.originalText || '保存する';
+      delete saveBtn.dataset.originalText;
+    }
   },
 
   /**
