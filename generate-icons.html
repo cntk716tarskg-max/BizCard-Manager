@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>アイコン生成ツール</title>
+  <style>
+    body { font-family: sans-serif; padding: 32px; background: #f0f4f8; }
+    h2   { margin-bottom: 8px; }
+    p    { color: #555; margin-bottom: 24px; }
+    .previews { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .preview-item { text-align: center; font-size: 12px; color: #666; }
+    button {
+      padding: 12px 28px; background: #1a6fd4; color: white;
+      border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
+    }
+    button:hover { background: #0c447c; }
+  </style>
+</head>
+<body>
+  <h2>名刺管理アプリ — アイコン生成ツール</h2>
+  <p>「アイコンをダウンロード」を押すと、必要なサイズの PNG が一括ダウンロードされます。<br>
+     ダウンロードされたファイルを <code>icons/</code> フォルダに入れてください。</p>
+
+  <div class="previews" id="previews"></div>
+  <button onclick="downloadAll()">アイコンをダウンロード</button>
+
+  <script>
+    // 必要なサイズ一覧
+    // 192, 512: Web App Manifest (Android/Chrome)
+    // 180: apple-touch-icon (iPhone / iPad)
+    // 167: iPad Retina
+    // 152: iPad (non-Retina)
+    const SIZES = [512, 192, 180, 167, 152];
+
+    function drawIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width  = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // --- 背景（角丸の青）---
+      const r = size * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(size - r, 0);
+      ctx.quadraticCurveTo(size, 0, size, r);
+      ctx.lineTo(size, size - r);
+      ctx.quadraticCurveTo(size, size, size - r, size);
+      ctx.lineTo(r, size);
+      ctx.quadraticCurveTo(0, size, 0, size - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, '#1a6fd4');
+      grad.addColorStop(1, '#0c447c');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // --- 名刺カード（白い長方形）---
+      const cw = size * 0.64;
+      const ch = size * 0.40;
+      const cx = (size - cw) / 2;
+      const cy = (size - ch) / 2;
+      const cr = size * 0.04;
+
+      ctx.beginPath();
+      ctx.moveTo(cx + cr, cy);
+      ctx.lineTo(cx + cw - cr, cy);
+      ctx.quadraticCurveTo(cx + cw, cy, cx + cw, cy + cr);
+      ctx.lineTo(cx + cw, cy + ch - cr);
+      ctx.quadraticCurveTo(cx + cw, cy + ch, cx + cw - cr, cy + ch);
+      ctx.lineTo(cx + cr, cy + ch);
+      ctx.quadraticCurveTo(cx, cy + ch, cx, cy + ch - cr);
+      ctx.lineTo(cx, cy + cr);
+      ctx.quadraticCurveTo(cx, cy, cx + cr, cy);
+      ctx.closePath();
+      ctx.fillStyle = 'white';
+      ctx.fill();
+
+      // --- カード上の横線（テキスト風）---
+      const lx = cx + cw * 0.13;
+      const lh = ch * 0.10;
+      const br = lh / 2;
+
+      // 名前ライン（太め・濃い青）
+      const l1w = cw * 0.48;
+      roundRect(ctx, lx, cy + ch * 0.20, l1w, lh * 1.3, br);
+      ctx.fillStyle = '#1a6fd4';
+      ctx.fill();
+
+      // 会社ライン
+      const l2w = cw * 0.34;
+      roundRect(ctx, lx, cy + ch * 0.45, l2w, lh, br);
+      ctx.fillStyle = '#5a9fd4';
+      ctx.fill();
+
+      // 連絡先ライン
+      const l3w = cw * 0.26;
+      roundRect(ctx, lx, cy + ch * 0.64, l3w, lh, br);
+      ctx.fillStyle = '#90bbdf';
+      ctx.fill();
+
+      return canvas;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    // プレビュー表示
+    const previewSizes = [64, 48, 40];
+    const container = document.getElementById('previews');
+    previewSizes.forEach(s => {
+      const canvas = drawIcon(s);
+      const div = document.createElement('div');
+      div.className = 'preview-item';
+      div.appendChild(canvas);
+      div.appendChild(document.createElement('br'));
+      div.appendChild(document.createTextNode(`${s}px`));
+      container.appendChild(div);
+    });
+
+    // ダウンロード
+    function downloadAll() {
+      SIZES.forEach((size, i) => {
+        const canvas = drawIcon(size);
+        setTimeout(() => {
+          canvas.toBlob(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `icon-${size}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }, 'image/png');
+        }, i * 300); // ブラウザのダウンロードブロック回避
+      });
+    }
+  </script>
+</body>
+</html>
