@@ -10,6 +10,7 @@
 const DetailModal = {
   _currentId: null,
   _photoIdx: 0,
+  _lb: { photos: [], idx: 0, scale: 1, tx: 0, ty: 0, dragging: false, lastX: 0, lastY: 0, pinchStartDist: 0, pinchStartScale: 1 },
 
   /**
    * 詳細モーダルを開く。
@@ -46,6 +47,7 @@ const DetailModal = {
    * 詳細モーダルを閉じる
    */
   close() {
+    this._closeLightbox();
     document.getElementById('detail-modal').classList.add('hidden');
     document.body.style.overflow = '';
     this._currentId = null;
@@ -118,10 +120,9 @@ const DetailModal = {
 
     return `
       <div class="detail-carousel">
-        <a href="${photos[0]}" target="_blank" rel="noopener"
-           class="detail-carousel-link" title="クリックで拡大表示">
+        <div class="detail-carousel-link" title="タップで全画面表示" role="button" tabindex="0">
           <img class="detail-carousel-img" src="${photos[0]}" alt="名刺写真1">
-        </a>
+        </div>
         ${navButtons}
         ${footer}
       </div>`;
@@ -254,6 +255,108 @@ const DetailModal = {
         this._showPhoto(photos, parseInt(dot.dataset.idx, 10));
       });
     });
+
+    // 写真タップで全画面表示
+    const link = carousel.querySelector('.detail-carousel-link');
+    link?.addEventListener('click', () => {
+      this._openLightbox(photos, this._photoIdx);
+    });
+
+    // スワイプナビゲーション（モバイル）
+    if (photos.length > 1) {
+      let swipeStartX = 0;
+      let swipeStartY = 0;
+      carousel.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          swipeStartX = e.touches[0].clientX;
+          swipeStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      carousel.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - swipeStartX;
+        const dy = e.changedTouches[0].clientY - swipeStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+          if (dx < 0) {
+            this._showPhoto(photos, (this._photoIdx + 1) % photos.length);
+          } else {
+            this._showPhoto(photos, (this._photoIdx - 1 + photos.length) % photos.length);
+          }
+        }
+      }, { passive: true });
+    }
+  },
+
+  // ライトボックスを開く
+  _openLightbox(photos, idx) {
+    const lb = document.getElementById('photo-lightbox');
+    if (!lb) return;
+    Object.assign(this._lb, { photos, idx, scale: 1, tx: 0, ty: 0, dragging: false });
+    this._lbUpdateImage();
+    lb.classList.remove('hidden');
+  },
+
+  // ライトボックスを閉じる
+  _closeLightbox() {
+    const lb = document.getElementById('photo-lightbox');
+    if (lb) lb.classList.add('hidden');
+    this._lb.dragging = false;
+  },
+
+  // ライトボックスの画像・カウンターを更新
+  _lbUpdateImage() {
+    const lb = document.getElementById('photo-lightbox');
+    if (!lb) return;
+    const img = lb.querySelector('.lightbox-img');
+    const counter = lb.querySelector('.lightbox-counter');
+    if (img) {
+      img.src = this._lb.photos[this._lb.idx];
+      img.alt = `名刺写真 ${this._lb.idx + 1}`;
+    }
+    if (counter) {
+      counter.textContent = this._lb.photos.length > 1
+        ? `${this._lb.idx + 1} / ${this._lb.photos.length}` : '';
+    }
+    const navVisible = this._lb.photos.length > 1;
+    lb.querySelector('.lightbox-prev').style.visibility = navVisible ? '' : 'hidden';
+    lb.querySelector('.lightbox-next').style.visibility = navVisible ? '' : 'hidden';
+    Object.assign(this._lb, { scale: 1, tx: 0, ty: 0 });
+    this._lbApplyTransform();
+  },
+
+  // ライトボックスの transform を適用
+  _lbApplyTransform(immediate = false) {
+    const lb = document.getElementById('photo-lightbox');
+    if (!lb) return;
+    const img = lb.querySelector('.lightbox-img');
+    if (img) {
+      img.style.transition = immediate ? 'none' : 'transform 0.12s ease';
+      img.style.transform = `translate(${this._lb.tx}px, ${this._lb.ty}px) scale(${this._lb.scale})`;
+    }
+    const stage = lb.querySelector('.lightbox-stage');
+    if (stage) {
+      stage.style.cursor = this._lb.dragging ? 'grabbing' : (this._lb.scale > 1 ? 'grab' : 'zoom-in');
+    }
+  },
+
+  // カーソル位置に向かってズーム
+  _lbZoom(factor, cursorX, cursorY) {
+    const lb = document.getElementById('photo-lightbox');
+    const stage = lb?.querySelector('.lightbox-stage');
+    if (!stage) return;
+    const newScale = Math.max(1, Math.min(5, this._lb.scale * factor));
+    if (newScale === this._lb.scale) return;
+    if (cursorX !== undefined && cursorY !== undefined) {
+      const rect = stage.getBoundingClientRect();
+      const cx = cursorX - (rect.left + rect.width / 2);
+      const cy = cursorY - (rect.top + rect.height / 2);
+      const ratio = newScale / this._lb.scale;
+      this._lb.tx = cx + ratio * (this._lb.tx - cx);
+      this._lb.ty = cy + ratio * (this._lb.ty - cy);
+    }
+    this._lb.scale = newScale;
+    if (newScale === 1) { this._lb.tx = 0; this._lb.ty = 0; }
+    this._lbApplyTransform();
   },
 
   /**
@@ -266,9 +369,7 @@ const DetailModal = {
     const carousel = document.querySelector('.detail-carousel');
     if (!carousel) return;
 
-    const link = carousel.querySelector('.detail-carousel-link');
-    const img  = carousel.querySelector('.detail-carousel-img');
-    if (link) link.href = photos[idx];
+    const img = carousel.querySelector('.detail-carousel-img');
     if (img)  { img.src = photos[idx]; img.alt = `名刺写真${idx + 1}`; }
 
     const counter = carousel.querySelector('.carousel-counter');
@@ -289,6 +390,135 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('detail-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) DetailModal.close();
   });
+
+  // ライトボックス イベント
+  const lb = document.getElementById('photo-lightbox');
+  if (lb) {
+    lb.querySelector('.lightbox-close').addEventListener('click', () => DetailModal._closeLightbox());
+
+    lb.querySelector('.lightbox-prev').addEventListener('click', () => {
+      const { photos, idx } = DetailModal._lb;
+      if (photos.length <= 1) return;
+      DetailModal._lb.idx = (idx - 1 + photos.length) % photos.length;
+      DetailModal._lbUpdateImage();
+    });
+
+    lb.querySelector('.lightbox-next').addEventListener('click', () => {
+      const { photos, idx } = DetailModal._lb;
+      if (photos.length <= 1) return;
+      DetailModal._lb.idx = (idx + 1) % photos.length;
+      DetailModal._lbUpdateImage();
+    });
+
+    // Ctrl+ホイールでズーム
+    const stage = lb.querySelector('.lightbox-stage');
+    stage.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      DetailModal._lbZoom(e.deltaY > 0 ? 0.85 : 1.18, e.clientX, e.clientY);
+    }, { passive: false });
+
+    // マウスドラッグでパン
+    stage.addEventListener('mousedown', (e) => {
+      if (DetailModal._lb.scale <= 1) return;
+      DetailModal._lb.dragging = true;
+      DetailModal._lb.lastX = e.clientX;
+      DetailModal._lb.lastY = e.clientY;
+      DetailModal._lbApplyTransform(true);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!DetailModal._lb.dragging) return;
+      DetailModal._lb.tx += e.clientX - DetailModal._lb.lastX;
+      DetailModal._lb.ty += e.clientY - DetailModal._lb.lastY;
+      DetailModal._lb.lastX = e.clientX;
+      DetailModal._lb.lastY = e.clientY;
+      DetailModal._lbApplyTransform(true);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (DetailModal._lb.dragging) {
+        DetailModal._lb.dragging = false;
+        DetailModal._lbApplyTransform(true);
+      }
+    });
+
+    // タッチ：ピンチズーム＆パン＆スワイプナビ
+    let lbSwipeStartX = 0, lbSwipeStartY = 0;
+
+    stage.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        DetailModal._lb.pinchStartDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        DetailModal._lb.pinchStartScale = DetailModal._lb.scale;
+        e.preventDefault();
+      } else if (e.touches.length === 1) {
+        lbSwipeStartX = e.touches[0].clientX;
+        lbSwipeStartY = e.touches[0].clientY;
+        if (DetailModal._lb.scale > 1) {
+          DetailModal._lb.dragging = true;
+          DetailModal._lb.lastX = e.touches[0].clientX;
+          DetailModal._lb.lastY = e.touches[0].clientY;
+        }
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const newScale = Math.max(1, Math.min(5, DetailModal._lb.pinchStartScale * (dist / DetailModal._lb.pinchStartDist)));
+        DetailModal._lb.scale = newScale;
+        if (newScale === 1) { DetailModal._lb.tx = 0; DetailModal._lb.ty = 0; }
+        DetailModal._lbApplyTransform(true);
+        e.preventDefault();
+      } else if (e.touches.length === 1 && DetailModal._lb.dragging) {
+        DetailModal._lb.tx += e.touches[0].clientX - DetailModal._lb.lastX;
+        DetailModal._lb.ty += e.touches[0].clientY - DetailModal._lb.lastY;
+        DetailModal._lb.lastX = e.touches[0].clientX;
+        DetailModal._lb.lastY = e.touches[0].clientY;
+        DetailModal._lbApplyTransform(true);
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchend', (e) => {
+      DetailModal._lb.dragging = false;
+      DetailModal._lbApplyTransform(true);
+      // スワイプでナビゲーション（スケール等倍時のみ）
+      if (e.changedTouches.length === 1 && e.touches.length === 0 && DetailModal._lb.scale <= 1) {
+        const dx = e.changedTouches[0].clientX - lbSwipeStartX;
+        const dy = e.changedTouches[0].clientY - lbSwipeStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+          const { photos, idx } = DetailModal._lb;
+          if (photos.length > 1) {
+            DetailModal._lb.idx = dx < 0
+              ? (idx + 1) % photos.length
+              : (idx - 1 + photos.length) % photos.length;
+            DetailModal._lbUpdateImage();
+          }
+        }
+      }
+    }, { passive: true });
+
+    // キーボード操作
+    document.addEventListener('keydown', (e) => {
+      if (lb.classList.contains('hidden')) return;
+      if (e.key === 'Escape') {
+        DetailModal._closeLightbox();
+      } else if (e.key === 'ArrowLeft') {
+        const { photos, idx } = DetailModal._lb;
+        if (photos.length > 1) { DetailModal._lb.idx = (idx - 1 + photos.length) % photos.length; DetailModal._lbUpdateImage(); }
+      } else if (e.key === 'ArrowRight') {
+        const { photos, idx } = DetailModal._lb;
+        if (photos.length > 1) { DetailModal._lb.idx = (idx + 1) % photos.length; DetailModal._lbUpdateImage(); }
+      }
+    });
+  }
 
   document.getElementById('detail-edit-btn').addEventListener('click', () => {
     const card = CardService.getById(DetailModal._currentId);

@@ -1370,6 +1370,7 @@ a:hover { text-decoration: underline; }
   width: 100%;
   height: 100%;
   padding: 12px;
+  cursor: zoom-in;
 }
 
 .detail-carousel-img {
@@ -1386,22 +1387,24 @@ a:hover { text-decoration: underline; }
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
-  background: rgba(255,255,255,0.14);
+  width: 40px;
+  height: 40px;
+  background: rgba(0,0,0,0.5);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.95);
   z-index: 2;
-  transition: background var(--transition);
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease;
 }
 
-.carousel-nav:hover { background: rgba(255,255,255,0.28); }
-.carousel-nav svg { width: 16px; height: 16px; }
-.carousel-prev { left: 8px; }
-.carousel-next { right: 8px; }
+.detail-carousel:hover .carousel-nav { opacity: 1; }
+.carousel-nav:hover { background: rgba(0,0,0,0.72); }
+.carousel-nav svg { width: 18px; height: 18px; }
+.carousel-prev { left: 10px; }
+.carousel-next { right: 10px; }
 
 /* フッター（カウンター＋ドット） */
 .carousel-footer {
@@ -1718,21 +1721,132 @@ a:hover { text-decoration: underline; }
 }
 
 #btn-logout {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
   color: var(--white);
-  border-radius: var(--radius-md);
-  padding: 6px 12px;
-  font-size: 0.8125rem;
+  padding: 0;
   cursor: pointer;
   transition: background var(--transition);
 }
 
+#btn-logout svg {
+  width: 18px;
+  height: 18px;
+}
+
 #btn-logout:hover {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.28);
 }
 
 @media (max-width: 480px) {
   .login-card { padding: 36px 24px; }
   #user-name  { display: none; }
+}
+
+/* =====================================================
+   写真ライトボックス
+   ===================================================== */
+
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.93);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.15s ease;
+}
+
+.photo-lightbox.hidden { display: none !important; }
+
+.lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 50%;
+  color: #fff;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.lightbox-close:hover { background: rgba(255,255,255,0.28); }
+.lightbox-close svg { width: 20px; height: 20px; }
+
+.lightbox-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.lightbox-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 16px 20px;
+  flex-shrink: 0;
+}
+
+.lightbox-nav {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 50%;
+  color: #fff;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.lightbox-nav:hover { background: rgba(255,255,255,0.28); }
+.lightbox-nav svg { width: 22px; height: 22px; }
+
+.lightbox-counter {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.6);
+  min-width: 64px;
+  text-align: center;
+}
+
+.lightbox-zoom-hint {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+  pointer-events: none;
+  white-space: nowrap;
 }
