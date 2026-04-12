@@ -16,7 +16,7 @@ const State = {
   cards: [],           // 全名刺データ（メモリキャッシュ）
   filtered: [],        // フィルタ・ソート後の表示データ
   searchQuery: '',
-  sortKey: 'updated_desc',
+  sortKey: 'company_asc',
   activeTagFilters: [],
   showFavoriteOnly: false,
 };

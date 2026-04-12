@@ -68,7 +68,7 @@
             <rect x="2" y="5" width="20" height="14" rx="2"/>
             <line x1="2" y1="10" x2="22" y2="10"/>
           </svg>
-          <h1>名刺管理</h1>
+          <h1>Bizcard Manager</h1>
         </div>
         <div class="header-actions">
           <button id="btn-export" class="btn btn-secondary btn-sm" title="CSVエクスポート">
@@ -136,7 +136,7 @@
               <option value="updated_desc">更新日（新しい順）</option>
               <option value="updated_asc">更新日（古い順）</option>
               <option value="name_asc">氏名（五十音順）</option>
-              <option value="company_asc">会社名（五十音順）</option>
+              <option value="company_asc" selected>会社名（五十音順）</option>
             </select>
             <button id="btn-favorite-filter" class="btn-favorite-filter" title="お気に入りのみ表示">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -321,20 +321,29 @@
   </div>
 
   <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
-  <script src="js/auth.js"></script>
-  <script src="js/cache.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/filter.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/form.js"></script>
-  <script src="js/detail.js"></script>
-  <script src="js/export.js"></script>
-  <script src="js/app.js"></script>
+  <script defer src="js/auth.js"></script>
+  <script defer src="js/cache.js"></script>
+  <script defer src="js/storage.js"></script>
+  <script defer src="js/data.js"></script>
+  <script defer src="js/filter.js"></script>
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/form.js"></script>
+  <script defer src="js/detail.js"></script>
+  <script defer src="js/export.js"></script>
+  <script defer src="js/app.js"></script>
+
+  <!-- Service Worker 登録 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
 </body>
 </html>
