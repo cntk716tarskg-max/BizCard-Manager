@@ -41,6 +41,42 @@ const StorageService = {
   },
 
   /**
+   * バージョン管理ドキュメントの参照を返す
+   * @returns {firebase.firestore.DocumentReference}
+   */
+  _versionRef() {
+    const uid = AuthService.getUid();
+    if (!uid) throw new Error('ログインしていません');
+    return db.collection('users').doc(uid).collection('meta').doc('version');
+  },
+
+  /**
+   * Firestore からバージョン文字列を取得する（1 回の読み取り）。
+   * 取得失敗時は null を返す（キャッシュを使わず全件取得にフォールバック）。
+   * @returns {Promise<string|null>}
+   */
+  async getVersion() {
+    try {
+      const doc = await this._versionRef().get();
+      return doc.exists ? (doc.data().v || null) : null;
+    } catch (e) {
+      console.warn('バージョン取得失敗（全件取得にフォールバック）:', e);
+      return null;
+    }
+  },
+
+  /**
+   * バージョンドキュメントを現在時刻で更新し、新しいバージョン文字列を返す。
+   * 書き込み操作（add / update / delete）の直後に呼ぶ。
+   * @returns {Promise<string>}
+   */
+  async updateVersion() {
+    const v = Date.now().toString();
+    await this._versionRef().set({ v });
+    return v;
+  },
+
+  /**
    * 全件取得（更新日降順）
    * @returns {Promise<BusinessCard[]>}
    */

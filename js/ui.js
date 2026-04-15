@@ -75,7 +75,7 @@ const UI = {
    */
   renderItem(card) {
     const avatar = card.photos && card.photos.length > 0
-      ? `<img src="${card.photos[0]}" alt="${this._esc(card.name)}">`
+      ? `<img src="${card.photos[0]}" alt="${this._esc(card.name)}" loading="lazy">`
       : `<span>${this._initial(card.name)}</span>`;
 
     const companyParts = [];

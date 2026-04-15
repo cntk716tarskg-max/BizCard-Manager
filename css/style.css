@@ -1371,6 +1371,8 @@ a:hover { text-decoration: underline; }
   height: 100%;
   padding: 12px;
   cursor: zoom-in;
+  position: relative;
+  z-index: 1;
 }
 
 .detail-carousel-img {
@@ -1379,7 +1381,45 @@ a:hover { text-decoration: underline; }
   object-fit: contain;
   display: block;
   border-radius: 4px;
-  transition: opacity 0.1s ease;
+  transition: opacity 0.25s ease;
+}
+
+/* 写真ロード中のシマーアニメーション */
+.carousel-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-img-skeleton {
+  display: none;
+  position: absolute;
+  inset: 16px;
+  border-radius: 8px;
+  background: linear-gradient(90deg,
+    #e8edf2 0%, #f0f4f8 40%, #e8edf2 80%);
+  background-size: 200% 100%;
+}
+
+.carousel-img-wrap.loading .carousel-img-skeleton {
+  display: block;
+  animation: shimmer 1.4s infinite;
+}
+
+.carousel-img-wrap.loading .detail-carousel-img {
+  opacity: 0;
+}
+
+.carousel-img-wrap:not(.loading) .detail-carousel-img {
+  opacity: 1;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* 前後ナビボタン */

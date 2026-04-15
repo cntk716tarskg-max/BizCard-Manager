@@ -120,8 +120,12 @@ const DetailModal = {
 
     return `
       <div class="detail-carousel">
-        <div class="detail-carousel-link" title="タップで全画面表示" role="button" tabindex="0">
-          <img class="detail-carousel-img" src="${photos[0]}" alt="名刺写真1">
+        <div class="carousel-img-wrap loading">
+          <div class="carousel-img-skeleton"></div>
+          <a href="${photos[0]}" target="_blank" rel="noopener"
+             class="detail-carousel-link" title="クリックで拡大表示">
+            <img class="detail-carousel-img" src="${photos[0]}" alt="名刺写真1">
+          </a>
         </div>
         ${navButtons}
         ${footer}
@@ -241,6 +245,19 @@ const DetailModal = {
   _initCarousel(photos) {
     const carousel = document.querySelector('.detail-carousel');
     if (!carousel) return;
+
+    // 最初の画像のローディング状態を管理
+    const wrap = carousel.querySelector('.carousel-img-wrap');
+    const img  = carousel.querySelector('.detail-carousel-img');
+    if (wrap && img) {
+      const onLoad = () => wrap.classList.remove('loading');
+      if (img.complete && img.naturalWidth > 0) {
+        wrap.classList.remove('loading');
+      } else {
+        img.addEventListener('load',  onLoad, { once: true });
+        img.addEventListener('error', onLoad, { once: true });
+      }
+    }
 
     carousel.querySelector('.carousel-prev')?.addEventListener('click', () => {
       this._showPhoto(photos, (this._photoIdx - 1 + photos.length) % photos.length);
@@ -369,8 +386,22 @@ const DetailModal = {
     const carousel = document.querySelector('.detail-carousel');
     if (!carousel) return;
 
-    const img = carousel.querySelector('.detail-carousel-img');
-    if (img)  { img.src = photos[idx]; img.alt = `名刺写真${idx + 1}`; }
+    const wrap = carousel.querySelector('.carousel-img-wrap');
+    const img  = carousel.querySelector('.detail-carousel-img');
+    const link = carousel.querySelector('.detail-carousel-link');
+
+    // src 切り替え前にローディング状態を開始
+    if (wrap) wrap.classList.add('loading');
+    if (link) link.href = photos[idx];
+    if (img) {
+      const onLoad = () => wrap?.classList.remove('loading');
+      img.addEventListener('load',  onLoad, { once: true });
+      img.addEventListener('error', onLoad, { once: true });
+      img.src = photos[idx];
+      img.alt = `名刺写真${idx + 1}`;
+      // すでにキャッシュ済みで即時表示できる場合
+      if (img.complete && img.naturalWidth > 0) wrap?.classList.remove('loading');
+    }
 
     const counter = carousel.querySelector('.carousel-counter');
     if (counter) counter.textContent = `${idx + 1} / ${photos.length}`;
