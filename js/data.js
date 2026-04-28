@@ -30,7 +30,7 @@ const CardService = {
     const uid = AuthService.getUid();
 
     const [serverVersion, cached] = await Promise.all([
-      StorageService.getVersion(),
+      StorageService.getVersion(),      // 失敗時は null を返す（例外を投げない）
       Promise.resolve(CacheService.get(uid)),
     ]);
 
@@ -45,16 +45,32 @@ const CardService = {
     try {
       const data = await StorageService.getAll();
       State.cards = Array.isArray(data) ? data : [];
-
-      // バージョンドキュメントがなければここで初回作成
-      const version = serverVersion || await StorageService.updateVersion();
-      CacheService.set(uid, State.cards, version);
     } catch (e) {
       console.error('データ読み込みエラー:', e);
       State.cards = [];
       UI.showNetworkError('データの読み込みに失敗しました。ページを再読み込みしてください。');
+      this.applyFilter();
+      return;
     }
+
+    // バージョン更新とキャッシュ保存（失敗してもデータ表示は継続）
+    this._saveVersionCache(uid, serverVersion);
     this.applyFilter();
+  },
+
+  /**
+   * バージョンドキュメントを更新してキャッシュを保存する。
+   * セキュリティルールが未更新の場合など失敗してもデータ表示に影響しない。
+   * @param {string} uid
+   * @param {string|null} existingVersion
+   */
+  async _saveVersionCache(uid, existingVersion) {
+    try {
+      const version = existingVersion || await StorageService.updateVersion();
+      CacheService.set(uid, State.cards, version);
+    } catch (e) {
+      console.warn('バージョンキャッシュ保存失敗（データ表示には影響なし）:', e);
+    }
   },
 
   /**
@@ -76,8 +92,7 @@ const CardService = {
 
     await StorageService.saveCard(card);
     State.cards.unshift(card);
-    const v = await StorageService.updateVersion();
-    CacheService.set(AuthService.getUid(), State.cards, v);
+    await this._saveVersionCache(AuthService.getUid(), null);
     this.applyFilter();
     return card;
   },
@@ -111,8 +126,7 @@ const CardService = {
     await StorageService.saveCard(card);
     const idx = State.cards.findIndex(c => c.id === id);
     if (idx !== -1) State.cards[idx] = card;
-    const v = await StorageService.updateVersion();
-    CacheService.set(AuthService.getUid(), State.cards, v);
+    await this._saveVersionCache(AuthService.getUid(), null);
     this.applyFilter();
     return card;
   },
@@ -129,8 +143,7 @@ const CardService = {
 
     await StorageService.deleteCard(id);
     State.cards = State.cards.filter(c => c.id !== id);
-    const v = await StorageService.updateVersion();
-    CacheService.set(AuthService.getUid(), State.cards, v);
+    await this._saveVersionCache(AuthService.getUid(), null);
     this.applyFilter();
   },
 
@@ -151,10 +164,9 @@ const CardService = {
 
     try {
       await StorageService.saveCard(card);
-      const v = await StorageService.updateVersion();
-      CacheService.set(AuthService.getUid(), State.cards, v);
+      await this._saveVersionCache(AuthService.getUid(), null);
     } catch (e) {
-      // 失敗 → UI ロールバック（キャッシュは更新していないので整合性は保たれる）
+      // 失敗 → UI ロールバック
       card.isFavorite = !card.isFavorite;
       this.applyFilter();
       console.error('お気に入り更新エラー:', e);
