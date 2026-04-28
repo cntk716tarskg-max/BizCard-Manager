@@ -127,18 +127,17 @@ const PhotoService = {
    * @returns {Promise<string[]>} Storage URL のみの配列
    */
   async processPhotos(photos, cardId) {
-    const urls = [];
-    for (let i = 0; i < photos.length; i++) {
-      const photo = photos[i];
-      if (photo.startsWith('data:')) {
-        const fileName = `photo_${Date.now()}_${i}.jpg`;
-        const url = await this._upload(photo, cardId, fileName);
-        urls.push(url);
-      } else if (photo.startsWith('https://')) {
-        urls.push(photo); // 既存 URL はそのまま
-      }
-    }
-    return urls;
+    const ts = Date.now();
+    const results = await Promise.all(
+      photos.map((photo, i) => {
+        if (photo.startsWith('data:')) {
+          return this._upload(photo, cardId, `photo_${ts}_${i}.jpg`);
+        }
+        if (photo.startsWith('https://')) return Promise.resolve(photo);
+        return Promise.resolve(null);
+      })
+    );
+    return results.filter(Boolean);
   },
 
   /**

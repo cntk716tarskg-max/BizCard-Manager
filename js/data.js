@@ -77,8 +77,8 @@ const CardService = {
    * 名刺を追加する。Firestore 保存 → バージョン更新 → キャッシュ更新。
    * @param {object} cardData
    */
-  async add(cardData) {
-    const id  = crypto.randomUUID();
+  async add(cardData, cardId = null) {
+    const id  = cardId || crypto.randomUUID();
     const now = new Date().toISOString();
     const photoUrls = await PhotoService.processPhotos(cardData.photos || [], id);
 

@@ -15,33 +15,61 @@ const PHONE_TYPES = ['会社', '携帯', '自宅', 'FAX', 'その他'];
 // PhotoUploader：写真の追加・削除・プレビュー管理
 // -----------------------------------------------
 const PhotoUploader = {
-  _photos: [], // base64文字列の配列
+  _photos: [],          // base64 または Storage URL の配列
+  _pendingCardId: null, // 事前アップロード先のカードID
+  _preUploadedUrls: new Set(), // このセッションでアップロードした URL（キャンセル時に削除）
 
   /**
    * 初期化（新規→空配列、編集→既存写真をセット）
    * @param {string[]} existingPhotos
+   * @param {string|null} cardId - 事前アップロード用カードID
    */
-  init(existingPhotos = []) {
+  init(existingPhotos = [], cardId = null) {
     this._photos = [...existingPhotos];
+    this._pendingCardId = cardId;
+    this._preUploadedUrls = new Set();
     this.render();
   },
 
   /**
-   * ファイル選択時：圧縮してから既存リストに追記する
+   * ファイル選択時：並列圧縮 → Storage へ事前アップロード
+   * アップロード成功 → URL を保持（保存時の再アップロードが不要になる）
+   * アップロード失敗 → base64 のまま保持（保存時にフォールバックアップロード）
    * @param {FileList|File[]} files
    */
   async onFileSelect(files) {
     this._showLoading(files.length);
-    const results = [];
-    for (const file of files) {
-      try {
-        const compressed = await this._compressImage(file);
-        results.push(compressed);
-      } catch (e) {
-        console.warn('画像の圧縮に失敗しました:', e);
-      }
-    }
-    this._photos.push(...results);
+    const fileArr = Array.from(files);
+
+    // 並列圧縮
+    const compressed = await Promise.all(
+      fileArr.map(file =>
+        this._compressImage(file).catch(e => {
+          console.warn('画像の圧縮に失敗しました:', e);
+          return null;
+        })
+      )
+    );
+
+    // 並列アップロード（cardId がある場合のみ）
+    const ts = Date.now();
+    const results = await Promise.all(
+      compressed.map((base64, i) => {
+        if (!base64) return Promise.resolve(null);
+        if (!this._pendingCardId) return Promise.resolve(base64);
+        return PhotoService._upload(base64, this._pendingCardId, `photo_${ts}_${i}.jpg`)
+          .then(url => {
+            this._preUploadedUrls.add(url);
+            return url;
+          })
+          .catch(e => {
+            console.warn('事前アップロード失敗（保存時に再試行）:', e);
+            return base64; // フォールバック
+          });
+      })
+    );
+
+    this._photos.push(...results.filter(Boolean));
     this.render();
   },
 
@@ -62,11 +90,26 @@ const PhotoUploader = {
 
   /**
    * 指定インデックスの写真を削除する
+   * 事前アップロード済み URL の場合は Storage からも削除する
    * @param {number} index
    */
   removePhoto(index) {
+    const photo = this._photos[index];
+    if (photo && photo.startsWith('https://') && this._preUploadedUrls.has(photo)) {
+      PhotoService.deleteByUrl(photo);
+      this._preUploadedUrls.delete(photo);
+    }
     this._photos.splice(index, 1);
     this.render();
+  },
+
+  /**
+   * キャンセル時に事前アップロード済みファイルを Storage から削除する
+   */
+  cleanupPreUploaded() {
+    const urls = [...this._preUploadedUrls];
+    this._preUploadedUrls.clear();
+    urls.forEach(url => PhotoService.deleteByUrl(url));
   },
 
   /**
@@ -211,6 +254,7 @@ const PhotoUploader = {
 
 const FormModal = {
   _editingId: null,
+  _pendingCardId: null, // 新規追加時の事前生成カードID
   _selectedTags: [], // 選択中のタグ（プリセット＋カスタム）
 
   /**
@@ -219,6 +263,7 @@ const FormModal = {
    */
   open(card = null) {
     this._editingId = card ? card.id : null;
+    this._pendingCardId = card ? card.id : crypto.randomUUID();
     this._selectedTags = card ? [...(card.tags || [])] : [];
 
     const modal = document.getElementById('form-modal');
@@ -238,11 +283,18 @@ const FormModal = {
 
   /**
    * フォームモーダルを閉じる
+   * @param {boolean} saved - true のときは事前アップロード済みファイルを削除しない
    */
-  close() {
+  close(saved = false) {
+    if (!saved) {
+      // キャンセル時：事前アップロード済みの Storage ファイルを削除
+      PhotoUploader.cleanupPreUploaded();
+    }
+
     document.getElementById('form-modal').classList.add('hidden');
     document.body.style.overflow = '';
     this._editingId = null;
+    this._pendingCardId = null;
     this._selectedTags = [];
     PhotoUploader.init([]); // 写真リストをリセット
 
@@ -301,8 +353,8 @@ const FormModal = {
     }
     addresses.forEach(a => this._addAddressRow(a));
 
-    // 写真プレビュー（PhotoUploaderで初期化）
-    PhotoUploader.init(card ? (card.photos || []) : []);
+    // 写真プレビュー（PhotoUploaderで初期化・cardIdを渡して事前アップロード有効化）
+    PhotoUploader.init(card ? (card.photos || []) : [], this._pendingCardId);
 
     // プリセットタグ
     this._renderPresetTags();
@@ -551,9 +603,9 @@ const FormModal = {
       if (this._editingId) {
         await CardService.update(this._editingId, data);
       } else {
-        await CardService.add(data);
+        await CardService.add(data, this._pendingCardId);
       }
-      this.close();
+      this.close(true); // saved=true: 事前アップロード済みファイルは削除しない
     } catch (e) {
       console.error('保存エラー:', e);
       alert('保存に失敗しました。ネットワーク接続を確認してください。');
