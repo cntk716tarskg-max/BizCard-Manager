@@ -1302,20 +1302,35 @@ const SchoolAddModal = {
 // SchoolCsvService — CSV一括取込・テンプレートDL
 // -----------------------------------------------
 const SchoolCsvService = {
-  _pendingNames: [],
+  _pendingRows: [],
 
   downloadTemplate() {
-    const csv = '﻿学校名\n（例）〇〇市立〇〇中学校\n';
+    const bom = '﻿';
+    const header  = '学校名,郵便番号,住所,電話種別1,電話番号1,電話種別2,電話番号2,電話種別3,電話番号3';
+    const example = '（例）横須賀市立〇〇中学校,239-0000,横須賀市〇〇町1-1,代表,046-000-0000,FAX,046-000-0001,,';
+    const csv = bom + header + '\n' + example + '\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'school_import_template.csv';
-    a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'school_import_template.csv'; a.click();
     URL.revokeObjectURL(a.href);
   },
 
+  _parseCsv(text) {
+    return text.split(/\r?\n/).map(line => {
+      const cols = []; let inQ = false; let cur = '';
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      cols.push(cur.trim());
+      return cols;
+    });
+  },
+
   openImportModal() {
-    this._pendingNames = [];
+    this._pendingRows = [];
     document.getElementById('school-csv-input').value = '';
     document.getElementById('school-csv-preview').innerHTML = '';
     document.getElementById('school-csv-submit').disabled = true;
@@ -1330,28 +1345,50 @@ const SchoolCsvService = {
 
   async handleFile(file) {
     const text = await file.text();
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    // ヘッダー行スキップ（「学校名」で始まる行）
-    const names = lines.filter(l => l !== '学校名' && !l.startsWith('（例）') && !l.startsWith('(例)'));
-    this._pendingNames = names;
+    const allRows = this._parseCsv(text).filter(cols => cols.some(c => c));
+    const dataRows = allRows.filter(cols =>
+      cols[0] && cols[0] !== '学校名' && !cols[0].startsWith('（例）') && !cols[0].startsWith('(例)')
+    );
+    this._pendingRows = dataRows.map(cols => {
+      const phones = [];
+      for (let i = 3; i + 1 < cols.length; i += 2) {
+        const num = cols[i + 1] || '';
+        if (num) phones.push({ id: crypto.randomUUID(), type: cols[i] || '代表', number: num });
+      }
+      return { name: cols[0] || '', zipCode: cols[1] || '', address: cols[2] || '', phones };
+    }).filter(r => r.name);
+
     const preview = document.getElementById('school-csv-preview');
-    if (names.length === 0) {
-      preview.innerHTML = '<span style="color:#ef4444">有効な学校名が見つかりませんでした。</span>';
+    if (!this._pendingRows.length) {
+      preview.innerHTML = '<span style="color:#ef4444">有効なデータが見つかりませんでした。</span>';
       document.getElementById('school-csv-submit').disabled = true;
     } else {
-      preview.innerHTML = `<span style="color:var(--blue-main)">${names.length}校を追加します:</span><br>` +
-        names.slice(0, 5).map(n => `・${UI._esc(n)}`).join('<br>') +
-        (names.length > 5 ? `<br>… 他${names.length - 5}校` : '');
+      const nameMap = {};
+      SchoolState.schools.filter(s => !s.isSpecial).forEach(s => { nameMap[s.name] = true; });
+      const addCount    = this._pendingRows.filter(r => !nameMap[r.name]).length;
+      const updateCount = this._pendingRows.length - addCount;
+      const summary = [
+        addCount    ? `新規${addCount}校` : '',
+        updateCount ? `更新${updateCount}校` : '',
+      ].filter(Boolean).join(' / ');
+      preview.innerHTML =
+        `<span style="color:var(--blue-main)">${this._pendingRows.length}校を処理します（${summary}）:</span><br>` +
+        this._pendingRows.slice(0, 5).map(r => {
+          const info = [r.address, r.phones.length ? `電話${r.phones.length}件` : ''].filter(Boolean).join(' / ');
+          return `・${UI._esc(r.name)}` +
+            (info ? `<span style="color:var(--text-muted);font-size:0.8rem"> — ${UI._esc(info)}</span>` : '');
+        }).join('<br>') +
+        (this._pendingRows.length > 5 ? `<br>… 他${this._pendingRows.length - 5}校` : '');
       document.getElementById('school-csv-submit').disabled = false;
     }
   },
 
   async importSchools() {
-    if (!this._pendingNames.length) return;
+    if (!this._pendingRows.length) return;
     const btn = document.getElementById('school-csv-submit');
     btn.disabled = true; btn.textContent = 'インポート中...';
     try {
-      await SchoolDataService.addSchoolsBulk(this._pendingNames);
+      await SchoolDataService.importSchoolContacts(this._pendingRows);
       this.closeImportModal();
       SchoolView.render();
     } catch (e) {

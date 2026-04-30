@@ -237,6 +237,52 @@ const SchoolDataService = {
     if (school) { school.phones = phones; school.addresses = addresses; }
   },
 
+  // CSV インポート: 既存校は電話・住所を更新、新規校は追加
+  async importSchoolContacts(rows) {
+    const now = new Date().toISOString();
+    const nameMap = {};
+    SchoolState.schools.filter(s => !s.isSpecial).forEach(s => { nameMap[s.name] = s; });
+
+    const snap = await this._schoolsCol().orderBy('order', 'desc').limit(1).get();
+    let maxOrder = snap.empty ? 0 : snap.docs[0].data().order;
+
+    const result = { added: 0, updated: 0 };
+
+    for (let i = 0; i < rows.length; i += 400) {
+      const batch = db.batch();
+      const memUpdates = [];
+      rows.slice(i, i + 400).forEach(row => {
+        if (!row.name) return;
+        const addresses = (row.zipCode || row.address)
+          ? [{ label: '', zipCode: row.zipCode || '', address: row.address || '' }]
+          : [];
+        const phones = row.phones || [];
+        const existing = nameMap[row.name];
+        if (existing) {
+          batch.update(this._schoolsCol().doc(existing.id), { phones, addresses });
+          memUpdates.push({ school: existing, phones, addresses });
+          result.updated++;
+        } else {
+          maxOrder++;
+          const ref = this._schoolsCol().doc();
+          const data = { name: row.name, order: maxOrder, isBuiltIn: false, createdAt: now, phones, addresses };
+          batch.set(ref, data);
+          const newSchool = { id: ref.id, ...data };
+          const insertIdx = SchoolState.schools.findIndex(s => s.isSpecial);
+          if (insertIdx === -1) SchoolState.schools.push(newSchool);
+          else SchoolState.schools.splice(insertIdx, 0, newSchool);
+          nameMap[row.name] = newSchool;
+          result.added++;
+        }
+      });
+      await batch.commit();
+      memUpdates.forEach(({ school, phones, addresses }) => {
+        school.phones = phones; school.addresses = addresses;
+      });
+    }
+    return result;
+  },
+
   getPersonsForSchool(schoolId) {
     return SchoolState.persons.filter(p => p.currentRecord?.schoolId === schoolId);
   },
