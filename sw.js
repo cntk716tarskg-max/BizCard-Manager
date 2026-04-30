@@ -4,12 +4,13 @@
  * バージョンを上げると古いキャッシュが自動削除される。
  */
 
-const CACHE_NAME = 'bizcard-v1';
+const CACHE_NAME = 'bizcard-v9';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './css/schools.css',
   './manifest.json',
   './js/auth.js',
   './js/cache.js',
@@ -20,6 +21,8 @@ const STATIC_ASSETS = [
   './js/form.js',
   './js/detail.js',
   './js/export.js',
+  './js/schoolData.js',
+  './js/schoolView.js',
   './js/app.js',
   'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js',

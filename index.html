@@ -19,6 +19,7 @@
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/schools.css">
 </head>
 <body>
 
@@ -44,7 +45,6 @@
       <h1 class="login-title">名刺管理</h1>
       <p class="login-sub">Googleアカウントでログインして<br>名刺を管理しましょう</p>
       <button id="btn-google-login" class="btn-google-login">
-        <!-- Google "G" ロゴ -->
         <svg viewBox="0 0 24 24" width="20" height="20">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -101,8 +101,8 @@
       </div>
     </header>
 
-    <!-- メインコンテンツ -->
-    <main class="main">
+    <!-- ===== 名刺一覧タブ ===== -->
+    <main class="main" id="tab-cards">
       <!-- 統計バー -->
       <div id="stats-bar" class="stats-bar">
         <span id="stats-total" class="stats-item">全0件</span>
@@ -171,17 +171,82 @@
       </div>
     </main>
 
+    <!-- ===== 中学校別タブ ===== -->
+    <div id="tab-schools" class="hidden">
+      <!-- ツールバー -->
+      <div class="school-toolbar">
+        <div class="school-search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="school-search" placeholder="学校名で絞り込み...">
+        </div>
+        <button id="btn-add-school" class="btn btn-primary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          学校追加
+        </button>
+        <button id="btn-add-person" class="btn btn-primary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/>
+            <line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          教員追加
+        </button>
+        <button id="btn-school-csv-import" class="btn btn-secondary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          CSV取込
+        </button>
+        <button id="btn-school-csv-template" class="btn btn-secondary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          テンプレートDL
+        </button>
+      </div>
+      <!-- 学校ブロックグリッド -->
+      <div id="school-blocks"></div>
+    </div>
+
+    <!-- ===== ボトムタブバー ===== -->
+    <nav id="bottom-tab-bar">
+      <button class="tab-btn active" data-tab="cards">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"/>
+          <line x1="2" y1="10" x2="22" y2="10"/>
+        </svg>
+        <span>名刺一覧</span>
+      </button>
+      <button class="tab-btn" data-tab="schools">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21V9l9-6 9 6v12"/>
+          <path d="M9 21V15h6v6"/>
+          <path d="M9 9h.01M15 9h.01"/>
+        </svg>
+        <span>中学校別</span>
+      </button>
+    </nav>
+
   </div><!-- /#app-wrapper -->
 
-  <!-- フォームモーダル -->
+  <!-- ===== 名刺フォームモーダル ===== -->
   <div id="form-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="名刺フォーム">
     <div class="modal-container modal-form">
       <div class="modal-header">
         <h2 id="form-modal-title">名刺を追加</h2>
         <button class="modal-close" id="form-modal-close" title="閉じる">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
@@ -240,8 +305,7 @@
               <div id="phones-container"></div>
               <button type="button" id="btn-add-phone" class="btn-add-field">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 電話番号を追加
               </button>
@@ -251,8 +315,7 @@
               <div id="emails-container"></div>
               <button type="button" id="btn-add-email" class="btn-add-field">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 メールアドレスを追加
               </button>
@@ -264,8 +327,7 @@
             <div id="addresses-container"></div>
             <button type="button" id="btn-add-address" class="btn-add-field">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               住所を追加
             </button>
@@ -299,15 +361,14 @@
     </div>
   </div>
 
-  <!-- 詳細モーダル -->
+  <!-- ===== 名刺詳細モーダル ===== -->
   <div id="detail-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="名刺詳細">
     <div class="modal-container modal-detail">
       <div class="modal-header">
         <h2 id="detail-modal-title">名刺詳細</h2>
         <button class="modal-close" id="detail-modal-close" title="閉じる">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
@@ -320,12 +381,11 @@
     </div>
   </div>
 
-  <!-- 写真ライトボックス -->
+  <!-- ===== 写真ライトボックス ===== -->
   <div id="photo-lightbox" class="photo-lightbox hidden" role="dialog" aria-modal="true" aria-label="写真を拡大表示">
     <button class="lightbox-close" title="閉じる (Esc)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
     <div class="lightbox-stage">
@@ -347,6 +407,237 @@
     <div class="lightbox-zoom-hint">Ctrl+ホイール / ピンチで拡大縮小</div>
   </div>
 
+  <!-- ===== 学校別フォームモーダル ===== -->
+  <div id="sp-form-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="人物フォーム">
+    <div class="modal-container modal-form">
+      <div class="modal-header">
+        <h2 id="sp-form-title">人を追加</h2>
+        <button class="modal-close" id="sp-form-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="sp-form" novalidate>
+          <!-- 所属学校 -->
+          <div class="form-section">
+            <div class="form-section-title">所属学校 <span class="required" id="sp-school-required" style="display:none">*</span></div>
+            <div class="form-group full">
+              <input type="text" id="sp-field-school" class="readonly-field" readonly autocomplete="off">
+              <select id="sp-school-select" class="hidden"></select>
+              <span class="field-error" id="sp-error-school"></span>
+            </div>
+          </div>
+          <!-- カテゴリー -->
+          <div class="form-section">
+            <div class="form-section-title">カテゴリー（複数選択可）</div>
+            <div class="sp-categories">
+              <label class="sp-cat-item"><input type="checkbox" class="sp-cat-cb" value="校長"><span class="sp-cat-label-text">校長</span></label>
+              <label class="sp-cat-item"><input type="checkbox" class="sp-cat-cb" value="管理職"><span class="sp-cat-label-text">管理職</span></label>
+              <label class="sp-cat-item"><input type="checkbox" class="sp-cat-cb" value="進路事務担当"><span class="sp-cat-label-text">進路事務担当</span></label>
+              <label class="sp-cat-item"><input type="checkbox" class="sp-cat-cb" value="教員"><span class="sp-cat-label-text">教員</span></label>
+            </div>
+          </div>
+          <!-- 基本情報 -->
+          <div class="form-section">
+            <div class="form-section-title">基本情報</div>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>氏名 <span class="required">*</span></label>
+                <input type="text" id="sp-field-name" placeholder="山田 太郎" autocomplete="off">
+                <span class="field-error" id="sp-error-name"></span>
+              </div>
+              <div class="form-group full">
+                <label>ふりがな</label>
+                <input type="text" id="sp-field-kana" placeholder="やまだ たろう" autocomplete="off">
+              </div>
+              <div class="form-group full">
+                <label>役職</label>
+                <input type="text" id="sp-field-position" placeholder="校長" autocomplete="off">
+              </div>
+            </div>
+          </div>
+          <!-- 写真 -->
+          <div class="form-section">
+            <div class="form-section-title">名刺写真</div>
+            <div id="sp-photo-area" class="photo-preview-area"></div>
+            <label class="btn btn-secondary btn-sm photo-upload-btn" style="margin-top:6px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              写真を追加
+              <input type="file" id="sp-photo-input" accept="image/*" multiple style="display:none">
+            </label>
+          </div>
+          <!-- 連絡先 -->
+          <div class="form-section">
+            <div class="form-section-title">連絡先</div>
+            <div class="form-group full">
+              <label>電話番号</label>
+              <div id="sp-phones-container"></div>
+              <button type="button" id="sp-btn-add-phone" class="btn-add-field">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                電話番号を追加
+              </button>
+            </div>
+            <div class="form-group full">
+              <label>メールアドレス</label>
+              <div id="sp-emails-container"></div>
+              <button type="button" id="sp-btn-add-email" class="btn-add-field">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                メールアドレスを追加
+              </button>
+            </div>
+          </div>
+          <!-- 住所 -->
+          <div class="form-section">
+            <div class="form-section-title">住所</div>
+            <div id="sp-addresses-container"></div>
+            <button type="button" id="sp-btn-add-address" class="btn-add-field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              住所を追加
+            </button>
+          </div>
+          <!-- 備考 -->
+          <div class="form-section">
+            <div class="form-section-title">備考</div>
+            <div class="form-group full">
+              <textarea id="sp-field-notes" rows="3" placeholder="メモや備考を入力..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="sp-form-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="sp-form-save">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 学校移動確認モーダル ===== -->
+  <div id="sp-move-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="学校を移動">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h2>学校を移動</h2>
+        <button class="modal-close" id="sp-move-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="sp-move-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="sp-move-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="sp-move-confirm">移動して情報を入力</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 人物詳細モーダル ===== -->
+  <div id="sp-detail-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="人物詳細">
+    <div class="modal-container modal-detail">
+      <div class="modal-header">
+        <h2 id="sp-detail-title">詳細</h2>
+        <button class="modal-close" id="sp-detail-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="sp-detail-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="sp-detail-delete">削除</button>
+        <div style="flex:1"></div>
+        <button type="button" class="btn btn-primary" id="sp-detail-edit">編集</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 過去の学校詳細モーダル ===== -->
+  <div id="sp-history-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="過去の学校詳細">
+    <div class="modal-container modal-detail">
+      <div class="modal-header">
+        <h2 id="sp-history-modal-title">過去の所属</h2>
+        <button class="modal-close" id="sp-history-modal-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="sp-history-modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="sp-history-modal-close-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 学校追加モーダル ===== -->
+  <div id="school-add-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="学校を追加">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h2>学校を追加</h2>
+        <button class="modal-close" id="school-add-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group full">
+          <label>学校名 <span class="required">*</span></label>
+          <input type="text" id="school-add-name" placeholder="〇〇市立〇〇中学校" autocomplete="off">
+          <span class="field-error" id="school-add-error"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="school-add-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="school-add-submit">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CSVインポートモーダル ===== -->
+  <div id="school-csv-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="CSVインポート">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h2>CSVで一括追加</h2>
+        <button class="modal-close" id="school-csv-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:10px">
+          学校名を1行1校で記入したCSVをアップロードしてください。
+        </p>
+        <label class="btn btn-secondary" style="cursor:pointer;display:inline-flex">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          CSVファイルを選択
+          <input type="file" id="school-csv-input" accept=".csv" style="display:none">
+        </label>
+        <div id="school-csv-preview" style="margin-top:12px;font-size:0.875rem;line-height:1.7"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="school-csv-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="school-csv-submit" disabled>インポート</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase Compat SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -362,6 +653,8 @@
   <script defer src="js/form.js"></script>
   <script defer src="js/detail.js"></script>
   <script defer src="js/export.js"></script>
+  <script defer src="js/schoolData.js"></script>
+  <script defer src="js/schoolView.js"></script>
   <script defer src="js/app.js"></script>
 
   <!-- Service Worker 登録 -->

@@ -6,6 +6,63 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------------------------
+  // ヘッダー高さを CSS 変数に反映（#tab-schools の top 計算用）
+  // -----------------------------------------------
+  const updateHeaderHeight = () => {
+    const h = document.querySelector('.header')?.offsetHeight || 56;
+    document.documentElement.style.setProperty('--header-h', h + 'px');
+  };
+  updateHeaderHeight();
+  window.addEventListener('resize', updateHeaderHeight);
+
+  // -----------------------------------------------
+  // ボトムタブバー — タブ切り替え
+  // -----------------------------------------------
+  let schoolViewLoaded = false;
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tab = btn.dataset.tab;
+
+      // ボタンのアクティブ状態
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+
+      // パネル表示切替
+      const cardsPanel  = document.getElementById('tab-cards');
+      const schoolPanel = document.getElementById('tab-schools');
+
+      if (tab === 'cards') {
+        cardsPanel.classList.remove('hidden');
+        schoolPanel.classList.add('hidden');
+        // ヘッダーボタン（追加・CSV）を表示
+        document.getElementById('btn-add').classList.remove('hidden');
+        document.getElementById('btn-export').classList.remove('hidden');
+      } else {
+        cardsPanel.classList.add('hidden');
+        schoolPanel.classList.remove('hidden');
+        // 名刺一覧のヘッダーボタンを非表示
+        document.getElementById('btn-add').classList.add('hidden');
+        document.getElementById('btn-export').classList.add('hidden');
+        // 学校データを初回のみ読み込む
+        if (!schoolViewLoaded && AuthService.getUid()) {
+          schoolViewLoaded = true;
+          UI.setPageLoading(true);
+          try {
+            await SchoolDataService.load();
+            SchoolView.render();
+          } catch (e) {
+            console.error('学校データ読み込みエラー:', e);
+            // セキュリティルール未更新などでも最低限の表示を行う
+            SchoolView.render();
+          } finally {
+            UI.setPageLoading(false);
+          }
+        }
+      }
+    });
+  });
+
+  // -----------------------------------------------
   // イベントバインド（一度だけ行う。認証状態に依存しない）
   // -----------------------------------------------
 
@@ -106,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user) {
       // ログイン済み → アプリ表示 → データ読み込み
       UI.showApp(user);
+      updateHeaderHeight(); // app-wrapper が表示された後に再計算
       UI.setPageLoading(true);
       try {
         await CardService.load();
@@ -118,6 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // 未ログイン → ログイン画面表示
       State.cards    = [];
       State.filtered = [];
+      SchoolState.schools = [];
+      SchoolState.persons = [];
+      SchoolState.loaded  = false;
+      schoolViewLoaded    = false;
       UI.showLoginScreen();
     }
   });

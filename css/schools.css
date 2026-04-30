@@ -1,0 +1,722 @@
+/* =====================================================
+   schools.css — 中学校別管理ビュー専用スタイル
+   ===================================================== */
+
+/* ---- レイアウト変数 ---- */
+:root {
+  --header-h:  56px;
+  --tab-bar-h: 60px;
+}
+
+/* =====================================================
+   ボトムタブバー
+   ===================================================== */
+
+#bottom-tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--tab-bar-h);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 102;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  padding: 6px 0;
+  transition: color var(--transition);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.tab-btn svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  fill: none;
+  transition: stroke var(--transition);
+}
+
+.tab-btn.active {
+  color: var(--blue-main);
+}
+
+.tab-btn.active svg {
+  stroke: var(--blue-main);
+}
+
+/* =====================================================
+   タブパネル
+   ===================================================== */
+
+/* 名刺一覧は通常スクロール（ボトムバー分の余白だけ追加） */
+.main {
+  padding-bottom: calc(16px + var(--tab-bar-h) + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 中学校別ビュー：固定配置でheader〜tabbarの間を占有 */
+#tab-schools {
+  position: fixed;
+  top: var(--header-h);
+  bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom, 0px));
+  left: 0; right: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  z-index: 49;
+}
+
+#tab-schools.hidden {
+  display: none !important;
+}
+
+/* =====================================================
+   学校ビュー ツールバー
+   ===================================================== */
+
+.school-toolbar {
+  flex-shrink: 0;
+  background: var(--bg);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.school-search-wrap {
+  flex: 1;
+  min-width: 180px;
+  position: relative;
+}
+
+.school-search-wrap svg {
+  position: absolute;
+  left: 10px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+#school-search {
+  width: 100%;
+  padding: 7px 12px 7px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+#school-search:focus { border-color: var(--blue-main); }
+
+.school-toolbar .btn-sm {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   学校ブロックグリッド
+   ===================================================== */
+
+#school-blocks {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  align-content: start;
+}
+
+/* =====================================================
+   学校ブロック
+   ===================================================== */
+
+.school-block {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+/* ドロップターゲット ハイライト */
+.school-block-drop {
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(26,111,212,0.2);
+}
+
+.school-block--special {
+  border-style: dashed;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.sc-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  background: var(--blue-light);
+  border-bottom: 1px solid rgba(26,111,212,0.15);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.school-block--special .sc-block-header {
+  background: #f1f5f9;
+  border-bottom-color: #e2e8f0;
+}
+
+.sc-block-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--blue-dark);
+  line-height: 1.3;
+}
+
+.school-block--special .sc-block-name {
+  color: var(--text-muted);
+}
+
+.sc-count-badge {
+  font-size: 0.75rem;
+  color: var(--blue-main);
+  background: rgba(26,111,212,0.12);
+  padding: 1px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.school-block--special .sc-count-badge {
+  color: var(--text-muted);
+  background: #e2e8f0;
+}
+
+.sc-block-body {
+  flex: 1;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* =====================================================
+   カテゴリー
+   ===================================================== */
+
+.sc-category {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sc-cat-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  padding: 2px 0 1px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.sc-cat-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--blue-main);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.45;
+  flex-shrink: 0;
+  transition: opacity var(--transition), background var(--transition);
+}
+
+.sc-cat-add svg {
+  width: 10px;
+  height: 10px;
+}
+
+.sc-cat-add:hover,
+.sc-cat-add:active {
+  opacity: 1;
+  background: rgba(26, 111, 212, 0.14);
+}
+
+.sc-cat-empty {
+  font-size: 0.7rem;
+  color: #d1d5db;
+  padding: 1px 2px;
+}
+
+.sc-cat-persons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 12px;
+}
+
+/* =====================================================
+   人物チップ
+   ===================================================== */
+
+.person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--blue-light);
+  border: 1px solid rgba(26,111,212,0.2);
+  border-radius: 20px;
+  padding: 3px 8px 3px 4px;
+  font-size: 0.7875rem;
+  color: var(--blue-dark);
+  cursor: default;
+  user-select: none;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.school-block--special .person-chip {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: var(--text-muted);
+}
+
+.chip-drag-handle {
+  display: flex;
+  align-items: center;
+  padding: 2px 3px;
+  color: var(--blue-mid);
+  cursor: grab;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity var(--transition);
+}
+
+.chip-drag-handle:active { cursor: grabbing; }
+
+.chip-drag-handle:hover,
+.person-chip:hover .chip-drag-handle { opacity: 1; }
+
+.chip-drag-handle svg {
+  width: 8px; height: 12px;
+}
+
+.chip-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.chip-info:hover .chip-name { text-decoration: underline; }
+
+.chip-name {
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
+.chip-cats {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  padding: 1px 5px;
+}
+
+/* ドラッグ中 */
+.chip-dragging {
+  opacity: 0.3;
+}
+
+.person-chip-ghost {
+  background: var(--white) !important;
+  border: 2px solid var(--blue-main) !important;
+  box-shadow: var(--shadow-md);
+  transform: scale(1.06);
+}
+
+/* =====================================================
+   + 人を追加ボタン
+   ===================================================== */
+
+.sc-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 7px;
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  color: var(--blue-main);
+  border-top: 1px dashed rgba(26,111,212,0.25);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  transition: background var(--transition);
+  background: none;
+}
+
+.sc-add-btn:hover {
+  background: var(--blue-light);
+}
+
+.sc-add-btn svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; flex-shrink: 0;
+}
+
+/* =====================================================
+   学校別フォームモーダル — カテゴリーチェックボックス
+   ===================================================== */
+
+.sp-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.sp-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.sp-cat-cb {
+  width: 16px; height: 16px;
+  accent-color: var(--blue-main);
+  cursor: pointer;
+}
+
+.sp-cat-label-text {
+  font-size: 0.875rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* 教員追加用 学校セレクト */
+#sp-school-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-size: 0.875rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--transition);
+  appearance: auto;
+}
+
+#sp-school-select:focus { border-color: var(--blue-main); }
+
+/* readonly フィールド */
+.readonly-field {
+  background: var(--bg) !important;
+  color: var(--text-muted) !important;
+  cursor: default !important;
+  border-color: var(--border) !important;
+}
+
+/* =====================================================
+   移動確認モーダル
+   ===================================================== */
+
+.move-person-name {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.move-arrow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.move-school-from, .move-school-to {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.move-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.move-school-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.move-school-name--new {
+  color: var(--blue-main);
+}
+
+.move-arrow {
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.move-note {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  padding: 8px 12px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  line-height: 1.6;
+}
+
+/* =====================================================
+   人物詳細モーダル
+   ===================================================== */
+
+.detail-school-badge {
+  display: inline-block;
+  background: var(--blue-light);
+  color: var(--blue-dark);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.detail-cats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.detail-cat-chip {
+  background: var(--blue-main);
+  color: var(--white);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* 新しい二列詳細モーダル用 */
+.sp-school-name-label {
+  display: inline-block;
+  background: var(--blue-light);
+  color: var(--blue-dark);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+.sp-detail-cat-chip {
+  background: var(--blue-main) !important;
+  color: var(--white) !important;
+}
+
+.detail-item {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  align-items: flex-start;
+}
+
+.detail-label {
+  flex-shrink: 0;
+  min-width: 70px;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.detail-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.detail-photo-thumb {
+  width: 80px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+/* ---- 履歴セクション ---- */
+
+.sp-history-section {
+  margin-top: 16px;
+}
+
+.sp-history-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--blue-main);
+  font-weight: 500;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.toggle-arrow {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.sp-history-body {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sp-history-body.open {
+  display: flex;
+}
+
+.history-entry {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  transition: background var(--transition);
+}
+
+.history-entry--clickable {
+  cursor: pointer;
+}
+
+.history-entry--clickable:hover {
+  background: #f1f5f9;
+  border-color: var(--blue-main);
+}
+
+.history-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-expand-arrow {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.history-school {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.history-cats {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.history-period {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* =====================================================
+   CSVモーダル
+   ===================================================== */
+
+#school-csv-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#school-csv-preview {
+  font-size: 0.875rem;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+/* =====================================================
+   小さいモーダル
+   ===================================================== */
+
+.modal-sm {
+  max-width: 440px !important;
+}
+
+/* =====================================================
+   レスポンシブ
+   ===================================================== */
+
+@media (max-width: 600px) {
+  #school-blocks {
+    grid-template-columns: 1fr;
+  }
+  .school-toolbar {
+    gap: 6px;
+  }
+}
+
+@media (min-width: 768px) {
+  #school-blocks {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
