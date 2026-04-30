@@ -231,6 +231,12 @@ const SchoolDataService = {
     SchoolState.persons = SchoolState.persons.filter(p => p.id !== personId);
   },
 
+  async updateSchoolContacts(schoolId, { phones, addresses }) {
+    await this._schoolsCol().doc(schoolId).update({ phones, addresses });
+    const school = SchoolState.schools.find(s => s.id === schoolId);
+    if (school) { school.phones = phones; school.addresses = addresses; }
+  },
+
   getPersonsForSchool(schoolId) {
     return SchoolState.persons.filter(p => p.currentRecord?.schoolId === schoolId);
   },

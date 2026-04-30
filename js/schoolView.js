@@ -173,7 +173,11 @@ const SchoolView = {
            data-school-id="${UI._esc(school.id)}"
            data-school-name="${UI._esc(school.name)}">
         <div class="sc-block-header">
-          <span class="sc-block-name">${UI._esc(school.name)}</span>
+          ${!school.isSpecial
+            ? `<button class="sc-block-name sc-block-name--btn"
+                       data-school-id="${UI._esc(school.id)}"
+                       title="学校情報を見る">${UI._esc(school.name)}</button>`
+            : `<span class="sc-block-name">${UI._esc(school.name)}</span>`}
           <span class="sc-count-badge">${persons.length}人</span>
         </div>
         <div class="sc-block-body">
@@ -209,6 +213,13 @@ const SchoolView = {
   },
 
   _bindBlockEvents() {
+    // 学校名クリック → 学校情報モーダル
+    document.querySelectorAll('.sc-block-name--btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        SchoolInfoModal.open(btn.dataset.schoolId);
+      });
+    });
     // カテゴリ別 + ボタン
     document.querySelectorAll('.sc-cat-add').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -357,6 +368,185 @@ const SchoolDrag = {
 };
 
 // -----------------------------------------------
+// SchoolInfoModal — 学校情報の閲覧（電話・住所）
+// -----------------------------------------------
+const SchoolInfoModal = {
+  _schoolId: null,
+
+  open(schoolId) {
+    const school = SchoolState.schools.find(s => s.id === schoolId);
+    if (!school || school.isSpecial) return;
+    this._schoolId = schoolId;
+    document.getElementById('sc-info-title').textContent = school.name;
+    const esc = UI._esc.bind(UI);
+    const phones    = school.phones    || [];
+    const addresses = school.addresses || [];
+    let html = '';
+
+    if (phones.length) {
+      html += `<div class="detail-section">
+        <div class="detail-section-label">電話番号</div>
+        <ul class="detail-list">
+          ${phones.map(p => `<li>
+            <span class="phone-type-badge">${esc(p.type)}</span>
+            <a href="tel:${esc(p.number)}">${esc(p.number)}</a>
+          </li>`).join('')}
+        </ul>
+      </div>`;
+    } else {
+      html += `<p class="sc-info-empty">電話番号はまだ登録されていません。</p>`;
+    }
+
+    if (addresses.length) {
+      html += `<div class="detail-section">
+        <div class="detail-section-label">住所</div>
+        ${addresses.map(addr => {
+          const full   = [addr.zipCode ? `〒${addr.zipCode}` : '', addr.address].filter(Boolean).join('　');
+          const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr.address || '')}`;
+          return `<div class="detail-address-item">
+            ${addr.label ? `<span class="address-label-badge">${esc(addr.label)}</span>` : ''}
+            <div class="detail-address-row">
+              <div class="detail-value">${esc(full)}</div>
+              ${addr.address ? `<button class="btn-map" onclick="window.open('${mapUrl}','_blank')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>地図を開く</button>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    } else {
+      html += `<p class="sc-info-empty">住所はまだ登録されていません。</p>`;
+    }
+
+    document.getElementById('sc-info-body').innerHTML = html;
+    document.getElementById('sc-info-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    document.getElementById('sc-info-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    this._schoolId = null;
+  },
+
+  edit() {
+    const id = this._schoolId;
+    this.close();
+    SchoolContactModal.open(id);
+  },
+};
+
+// -----------------------------------------------
+// SchoolContactModal — 学校の電話番号・住所を編集
+// -----------------------------------------------
+const SchoolContactModal = {
+  _schoolId: null,
+
+  open(schoolId) {
+    const school = SchoolState.schools.find(s => s.id === schoolId);
+    if (!school || school.isSpecial) return;
+    this._schoolId = schoolId;
+    document.getElementById('sc-contact-school-name').textContent = school.name;
+    const phonesContainer = document.getElementById('sc-contact-phones');
+    phonesContainer.innerHTML = '';
+    (school.phones || []).forEach(p => this._addPhone(p));
+    const addressesContainer = document.getElementById('sc-contact-addresses');
+    addressesContainer.innerHTML = '';
+    (school.addresses || []).forEach(a => this._addAddress(a));
+    document.getElementById('sc-contact-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    document.getElementById('sc-contact-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    this._schoolId = null;
+  },
+
+  _addPhone(phone = null) {
+    const TYPES = ['代表', '直通', '携帯', 'FAX', 'その他'];
+    const container = document.getElementById('sc-contact-phones');
+    const rowId = phone?.id || `sc_p_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const isCustom = phone?.type && !TYPES.slice(0, -1).includes(phone.type);
+    const selType  = isCustom ? 'その他' : (phone?.type || TYPES[0]);
+    const div = document.createElement('div');
+    div.className = 'phone-row'; div.dataset.phoneId = rowId;
+    div.innerHTML = `
+      <div class="phone-type-wrap">
+        <select class="phone-type-select">
+          ${TYPES.map(t => `<option value="${t}"${selType===t?' selected':''}>${t}</option>`).join('')}
+        </select>
+        <input type="text" class="phone-custom-type" placeholder="例）代表"
+               value="${isCustom ? UI._esc(phone.type) : ''}" style="display:${isCustom?'block':'none'}">
+      </div>
+      <input type="tel" class="phone-number-input" placeholder="03-0000-0000"
+             value="${UI._esc(phone?.number || '')}">
+      <button type="button" class="btn-remove-row" title="削除">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>`;
+    const sel  = div.querySelector('.phone-type-select');
+    const cust = div.querySelector('.phone-custom-type');
+    sel.addEventListener('change', () => {
+      const show = sel.value === 'その他';
+      cust.style.display = show ? 'block' : 'none';
+      if (show) cust.focus(); else cust.value = '';
+    });
+    div.querySelector('.btn-remove-row').addEventListener('click', () => div.remove());
+    container.appendChild(div);
+  },
+
+  _addAddress(addr = null) {
+    const container = document.getElementById('sc-contact-addresses');
+    const div = document.createElement('div');
+    div.className = 'address-row';
+    div.innerHTML = `
+      <input type="text" class="address-label-input" placeholder="ラベル（例：本校）" value="${UI._esc(addr?.label || '')}">
+      <input type="text" class="address-zip-input"   placeholder="郵便番号（例：123-4567）" value="${UI._esc(addr?.zipCode || '')}">
+      <input type="text" class="address-text-input"  placeholder="住所" value="${UI._esc(addr?.address || '')}">
+      <button type="button" class="btn-remove-row" title="削除">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>`;
+    div.querySelector('.btn-remove-row').addEventListener('click', () => div.remove());
+    container.appendChild(div);
+  },
+
+  async save() {
+    const phones = [];
+    document.querySelectorAll('#sc-contact-phones .phone-row').forEach(row => {
+      const sel  = row.querySelector('.phone-type-select');
+      const cust = row.querySelector('.phone-custom-type');
+      const num  = row.querySelector('.phone-number-input')?.value.trim() || '';
+      let type = sel?.value || '';
+      if (type === 'その他') type = cust?.value.trim() || 'その他';
+      if (num) phones.push({ id: row.dataset.phoneId, type, number: num });
+    });
+    const addresses = [];
+    document.querySelectorAll('#sc-contact-addresses .address-row').forEach(row => {
+      const label   = row.querySelector('.address-label-input')?.value.trim() || '';
+      const zipCode = row.querySelector('.address-zip-input')?.value.trim() || '';
+      const address = row.querySelector('.address-text-input')?.value.trim() || '';
+      if (zipCode || address) addresses.push({ label, zipCode, address });
+    });
+    const btn = document.getElementById('sc-contact-save');
+    btn.disabled = true; btn.textContent = '保存中...';
+    try {
+      await SchoolDataService.updateSchoolContacts(this._schoolId, { phones, addresses });
+      this.close();
+    } catch (e) {
+      console.error('学校連絡先保存エラー:', e);
+      alert('保存に失敗しました。');
+      btn.disabled = false; btn.textContent = '保存する';
+    }
+  },
+};
+
+// -----------------------------------------------
 // SchoolPersonModal — 人物の追加・編集フォーム
 // -----------------------------------------------
 const SchoolPersonModal = {
@@ -441,17 +631,38 @@ const SchoolPersonModal = {
     const cats = document.querySelectorAll('.sp-cat-cb');
     cats.forEach(cb => { cb.checked = (rec?.categories || []).includes(cb.value); });
 
-    // 電話
+    // 学校の電話番号・住所プレビュー（読み取り専用）
+    const school = SchoolState.schools.find(s => s.id === this._schoolId);
+    const phonesPreview = document.getElementById('sp-school-phones-preview');
+    if (phonesPreview) {
+      const sp = school?.phones || [];
+      phonesPreview.innerHTML = sp.length
+        ? sp.map(p => `<div class="sc-contact-readonly">
+            <span class="phone-type-badge">${UI._esc(p.type)}</span>${UI._esc(p.number)}
+          </div>`).join('')
+        : '<span class="sc-preview-empty">学校に電話番号が登録されていません</span>';
+    }
+    const addressesPreview = document.getElementById('sp-school-addresses-preview');
+    if (addressesPreview) {
+      const sa = school?.addresses || [];
+      addressesPreview.innerHTML = sa.length
+        ? sa.map(a => {
+            const full = [a.zipCode ? `〒${a.zipCode}` : '', a.address].filter(Boolean).join('　');
+            return `<div class="sc-contact-readonly">
+              ${a.label ? `<span class="address-label-badge">${UI._esc(a.label)}</span>` : ''}
+              ${UI._esc(full)}
+            </div>`;
+          }).join('')
+        : '<span class="sc-preview-empty">学校に住所が登録されていません</span>';
+    }
+
+    // 個人の追加電話番号
     document.getElementById('sp-phones-container').innerHTML = '';
     (rec?.phones || []).forEach(p => this._addPhone(p));
 
     // メール
     document.getElementById('sp-emails-container').innerHTML = '';
     (rec?.emails || []).forEach(e => this._addEmail(e));
-
-    // 住所
-    document.getElementById('sp-addresses-container').innerHTML = '';
-    (rec?.addresses || []).forEach(a => this._addAddress(a));
 
     // 写真
     SchoolPhotoUploader.init(rec?.photos || []);
@@ -822,11 +1033,16 @@ const SchoolPersonDetailModal = {
         <div class="detail-value">${esc(rec.position)}</div>
       </div>`;
     }
-    if ((rec?.phones || []).length) {
+    // 電話番号：学校の共通電話 + 個人の追加電話
+    const schoolForDetail = SchoolState.schools.find(s => s.id === rec?.schoolId);
+    const schoolPhones  = schoolForDetail?.phones  || [];
+    const personPhones  = rec?.phones || [];
+    const allPhones = [...schoolPhones, ...personPhones];
+    if (allPhones.length) {
       html += `<div class="detail-section">
         <div class="detail-section-label">電話番号</div>
         <ul class="detail-list">
-          ${rec.phones.map(p => `<li>
+          ${allPhones.map(p => `<li>
             <span class="phone-type-badge">${esc(p.type)}</span>
             <a href="tel:${esc(p.number)}">${esc(p.number)}</a>
           </li>`).join('')}
@@ -841,10 +1057,12 @@ const SchoolPersonDetailModal = {
         </ul>
       </div>`;
     }
-    if ((rec?.addresses || []).length) {
+    // 住所：学校の共通住所のみ
+    const schoolAddresses = schoolForDetail?.addresses || [];
+    if (schoolAddresses.length) {
       html += `<div class="detail-section">
         <div class="detail-section-label">住所</div>
-        ${rec.addresses.map(addr => {
+        ${schoolAddresses.map(addr => {
           const full = [addr.zipCode ? `〒${addr.zipCode}` : '', addr.address].filter(Boolean).join('　');
           const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr.address || '')}`;
           return `<div class="detail-address-item">
@@ -1158,6 +1376,24 @@ document.addEventListener('DOMContentLoaded', () => {
     SchoolView.render();
   });
 
+  // 学校情報閲覧モーダル
+  document.getElementById('sc-info-close')?.addEventListener('click', () => SchoolInfoModal.close());
+  document.getElementById('sc-info-close-btn')?.addEventListener('click', () => SchoolInfoModal.close());
+  document.getElementById('sc-info-edit-btn')?.addEventListener('click', () => SchoolInfoModal.edit());
+  document.getElementById('sc-info-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) SchoolInfoModal.close();
+  });
+
+  // 学校連絡先編集モーダル
+  document.getElementById('sc-contact-close')?.addEventListener('click', () => SchoolContactModal.close());
+  document.getElementById('sc-contact-cancel')?.addEventListener('click', () => SchoolContactModal.close());
+  document.getElementById('sc-contact-save')?.addEventListener('click', () => SchoolContactModal.save());
+  document.getElementById('sc-contact-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) SchoolContactModal.close();
+  });
+  document.getElementById('sc-contact-add-phone')?.addEventListener('click', () => SchoolContactModal._addPhone());
+  document.getElementById('sc-contact-add-address')?.addEventListener('click', () => SchoolContactModal._addAddress());
+
   // 学校追加ボタン
   document.getElementById('btn-add-school')?.addEventListener('click', () => SchoolAddModal.open());
   // 教員追加ボタン（学校選択ドロップダウンつきフォームを開く）
@@ -1227,8 +1463,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ESCキー
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (!document.getElementById('sp-history-modal').classList.contains('hidden')) { SchoolHistoryDetailModal.close(); return; }
-    if (!document.getElementById('sp-form-modal').classList.contains('hidden'))    { SchoolPersonModal.close(); return; }
+    if (!document.getElementById('sp-history-modal').classList.contains('hidden'))  { SchoolHistoryDetailModal.close(); return; }
+    if (!document.getElementById('sc-contact-modal').classList.contains('hidden'))  { SchoolContactModal.close(); return; }
+    if (!document.getElementById('sc-info-modal').classList.contains('hidden'))     { SchoolInfoModal.close(); return; }
+    if (!document.getElementById('sp-form-modal').classList.contains('hidden'))     { SchoolPersonModal.close(); return; }
     if (!document.getElementById('sp-move-modal').classList.contains('hidden'))    { SchoolMoveModal.close(); return; }
     if (!document.getElementById('sp-detail-modal').classList.contains('hidden'))  { SchoolPersonDetailModal.close(); return; }
     if (!document.getElementById('school-add-modal').classList.contains('hidden')) { SchoolAddModal.close(); return; }

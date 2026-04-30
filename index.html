@@ -407,6 +407,66 @@
     <div class="lightbox-zoom-hint">Ctrl+ホイール / ピンチで拡大縮小</div>
   </div>
 
+  <!-- ===== 学校情報閲覧モーダル ===== -->
+  <div id="sc-info-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="学校情報">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h2 id="sc-info-title"></h2>
+        <button class="modal-close" id="sc-info-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="sc-info-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="sc-info-close-btn">閉じる</button>
+        <button type="button" class="btn btn-primary" id="sc-info-edit-btn">編集</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 学校連絡先編集モーダル ===== -->
+  <div id="sc-contact-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="学校の連絡先を編集">
+    <div class="modal-container modal-form">
+      <div class="modal-header">
+        <h2 id="sc-contact-school-name"></h2>
+        <button class="modal-close" id="sc-contact-close" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="sc-contact-note">ここで登録した電話番号・住所は、この学校の先生全員に共通で表示されます。</p>
+        <div class="form-section">
+          <div class="form-section-title">電話番号</div>
+          <div id="sc-contact-phones"></div>
+          <button type="button" id="sc-contact-add-phone" class="btn-add-field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            電話番号を追加
+          </button>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">住所</div>
+          <div id="sc-contact-addresses"></div>
+          <button type="button" id="sc-contact-add-address" class="btn-add-field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            住所を追加
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="sc-contact-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="sc-contact-save">保存する</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 学校別フォームモーダル ===== -->
   <div id="sp-form-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="人物フォーム">
     <div class="modal-container modal-form">
@@ -476,7 +536,14 @@
           <div class="form-section">
             <div class="form-section-title">連絡先</div>
             <div class="form-group full">
-              <label>電話番号</label>
+              <label class="sc-readonly-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                学校の電話番号（共通）
+              </label>
+              <div id="sp-school-phones-preview" class="sc-preview-area"></div>
+            </div>
+            <div class="form-group full">
+              <label>追加の電話番号</label>
               <div id="sp-phones-container"></div>
               <button type="button" id="sp-btn-add-phone" class="btn-add-field">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -499,13 +566,13 @@
           <!-- 住所 -->
           <div class="form-section">
             <div class="form-section-title">住所</div>
-            <div id="sp-addresses-container"></div>
-            <button type="button" id="sp-btn-add-address" class="btn-add-field">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              住所を追加
-            </button>
+            <div class="form-group full">
+              <label class="sc-readonly-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                学校の住所（共通）
+              </label>
+              <div id="sp-school-addresses-preview" class="sc-preview-area"></div>
+            </div>
           </div>
           <!-- 備考 -->
           <div class="form-section">

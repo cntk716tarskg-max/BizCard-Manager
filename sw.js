@@ -4,7 +4,7 @@
  * バージョンを上げると古いキャッシュが自動削除される。
  */
 
-const CACHE_NAME = 'bizcard-v9';
+const CACHE_NAME = 'bizcard-v11';
 
 const STATIC_ASSETS = [
   './',
