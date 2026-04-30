@@ -436,6 +436,28 @@ const SchoolInfoModal = {
     this.close();
     SchoolContactModal.open(id);
   },
+
+  async delete() {
+    const school = SchoolState.schools.find(s => s.id === this._schoolId);
+    if (!school) return;
+    const persons = SchoolDataService.getPersonsForSchool(this._schoolId);
+    const msg = persons.length
+      ? `「${school.name}」を削除しますか？\n\n${persons.length}人が登録されています。削除すると全員「登録外」に移動されます。`
+      : `「${school.name}」を削除しますか？`;
+    if (!confirm(msg)) return;
+    const btn = document.getElementById('sc-info-delete-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '削除中...'; }
+    const id = this._schoolId;
+    try {
+      await SchoolDataService.deleteSchool(id);
+      this.close();
+      SchoolView.render();
+    } catch (e) {
+      console.error('学校削除エラー:', e);
+      alert('削除に失敗しました。');
+      if (btn) { btn.disabled = false; btn.textContent = '削除'; }
+    }
+  },
 };
 
 // -----------------------------------------------
@@ -1304,14 +1326,33 @@ const SchoolAddModal = {
 const SchoolCsvService = {
   _pendingRows: [],
 
-  downloadTemplate() {
+  downloadCurrentData() {
     const bom = '﻿';
-    const header  = '学校名,郵便番号,住所,電話種別1,電話番号1,電話種別2,電話番号2,電話種別3,電話番号3';
-    const example = '（例）横須賀市立〇〇中学校,239-0000,横須賀市〇〇町1-1,代表,046-000-0000,FAX,046-000-0001,,';
-    const csv = bom + header + '\n' + example + '\n';
+    const header = '学校名,郵便番号,住所,電話種別1,電話番号1,電話種別2,電話番号2,電話種別3,電話番号3';
+    const escCsv = v => {
+      const s = String(v || '');
+      return (s.includes(',') || s.includes('"') || s.includes('\n'))
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = SchoolState.schools
+      .filter(s => !s.isSpecial)
+      .map(school => {
+        const addr = (school.addresses || [])[0] || {};
+        const phones = school.phones || [];
+        const phoneCols = [];
+        for (let i = 0; i < 3; i++) {
+          phoneCols.push(phones[i]?.type || '');
+          phoneCols.push(phones[i]?.number || '');
+        }
+        return [school.name, addr.zipCode || '', addr.address || '', ...phoneCols]
+          .map(escCsv).join(',');
+      });
+    const csv = bom + header + '\n' + rows.join('\n') + '\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'school_import_template.csv'; a.click();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `schools_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
     URL.revokeObjectURL(a.href);
   },
 
@@ -1417,6 +1458,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sc-info-close')?.addEventListener('click', () => SchoolInfoModal.close());
   document.getElementById('sc-info-close-btn')?.addEventListener('click', () => SchoolInfoModal.close());
   document.getElementById('sc-info-edit-btn')?.addEventListener('click', () => SchoolInfoModal.edit());
+  document.getElementById('sc-info-delete-btn')?.addEventListener('click', () => SchoolInfoModal.delete());
   document.getElementById('sc-info-modal')?.addEventListener('click', e => {
     if (e.target === e.currentTarget) SchoolInfoModal.close();
   });
@@ -1447,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // CSV
   document.getElementById('btn-school-csv-import')?.addEventListener('click', () => SchoolCsvService.openImportModal());
-  document.getElementById('btn-school-csv-template')?.addEventListener('click', () => SchoolCsvService.downloadTemplate());
+  document.getElementById('btn-school-csv-export')?.addEventListener('click', () => SchoolCsvService.downloadCurrentData());
   document.getElementById('school-csv-close')?.addEventListener('click', () => SchoolCsvService.closeImportModal());
   document.getElementById('school-csv-cancel')?.addEventListener('click', () => SchoolCsvService.closeImportModal());
   document.getElementById('school-csv-submit')?.addEventListener('click', () => SchoolCsvService.importSchools());

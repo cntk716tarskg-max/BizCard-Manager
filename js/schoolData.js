@@ -237,6 +237,15 @@ const SchoolDataService = {
     if (school) { school.phones = phones; school.addresses = addresses; }
   },
 
+  async deleteSchool(schoolId) {
+    const persons = this.getPersonsForSchool(schoolId);
+    for (const person of persons) {
+      await this.movePerson(person.id, SPECIAL_SCHOOL_IDS.UNREGISTERED, '登録外');
+    }
+    await this._schoolsCol().doc(schoolId).delete();
+    SchoolState.schools = SchoolState.schools.filter(s => s.id !== schoolId);
+  },
+
   // CSV インポート: 既存校は電話・住所を更新、新規校は追加
   async importSchoolContacts(rows) {
     const now = new Date().toISOString();

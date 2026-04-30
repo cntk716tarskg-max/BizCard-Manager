@@ -205,13 +205,13 @@
           </svg>
           CSV取込
         </button>
-        <button id="btn-school-csv-template" class="btn btn-secondary btn-sm">
+        <button id="btn-school-csv-export" class="btn btn-secondary btn-sm">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          テンプレートDL
+          CSV出力
         </button>
       </div>
       <!-- 学校ブロックグリッド -->
@@ -420,6 +420,8 @@
       </div>
       <div class="modal-body" id="sc-info-body"></div>
       <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="sc-info-delete-btn">削除</button>
+        <div style="flex:1"></div>
         <button type="button" class="btn btn-ghost" id="sc-info-close-btn">閉じる</button>
         <button type="button" class="btn btn-primary" id="sc-info-edit-btn">編集</button>
       </div>
@@ -686,7 +688,8 @@
       <div class="modal-body">
         <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:10px">
           学校名・郵便番号・住所・電話番号を記入したCSVをアップロードしてください。<br>
-          既存の学校名と一致する行は電話・住所を上書き更新します。テンプレートを参考にしてください。
+          既存の学校名と一致する行は電話・住所を上書き更新します。<br>
+          「CSV出力」で現状データをダウンロードして編集したものをそのままアップロードできます。
         </p>
         <label class="btn btn-secondary" style="cursor:pointer;display:inline-flex">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
